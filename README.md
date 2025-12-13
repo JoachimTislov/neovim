@@ -3,9 +3,7 @@
 I thrive for a minimal setup and utilizing the inbuilt features over external ones.
 
 ## TODOs
-
 - Figure out how to select duplicate lines in visual mode selectively, ignoring the rest
-    -  
     - https://www.youtube.com/watch?v=9apMF3Dpcuw - 23:20
 - Add toggle for relative numbers
 - Consider turning on freely moving cursor in normal mode
@@ -42,6 +40,7 @@ https://github.com/zbirenbaum/copilot.lua
 https://github.com/olimorris/codecompanion.nvim
 https://github.com/ycm-core/YouCompleteMe
 https://github.com/nvimdev/lspsaga.nvim
+https://github.com/supermaven-inc/supermaven-nvim
 https://github.com/neoclide/coc.nvim?tab=readme-ov-file
     - To host VS Code extensions
 
