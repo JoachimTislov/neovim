@@ -52,6 +52,10 @@
       "rev": "cf2a288",
       "src": "https://github.com/rose-pine/neovim"
     },
+    "nvim": {
+      "rev": "76a8d0515024cc55d8bd26fc13f1af88faef3ebf",
+      "src": "https://github.com/catppuccin/nvim"
+    },
     "nvim-autopairs": {
       "rev": "7a2c97c",
       "src": "https://github.com/windwp/nvim-autopairs"
@@ -87,6 +91,10 @@
     "render-markdown.nvim": {
       "rev": "6e0e890",
       "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
+    },
+    "vague.nvim": {
+      "rev": "676e5b4d74f32ff91c1583eba9c326d2b749672f",
+      "src": "https://github.com/vague2k/vague.nvim"
     },
     "which-key.nvim": {
       "rev": "3aab214",

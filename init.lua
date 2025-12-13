@@ -17,7 +17,9 @@ vim.o.confirm = true
 vim.o.splitbelow = true
 vim.o.scrolloff = 15
 vim.o.list = true
-vim.opt.listchars = { tab = '▸ ', trail = '·' }
+vim.o.ignorecase = true
+vim.o.smartcase = true
+vim.opt.listchars = { tab = '▸ ', trail = '·', nbsp = '␣' }
 
 vim.pack.add {
   'https://github.com/folke/lazydev.nvim',
@@ -48,7 +50,9 @@ require('blink.cmp').setup {
   fuzzy = { implementation = 'lua' },
 }
 
-require('colorizer').setup()
+require('colorizer').setup {
+  names = false,
+}
 require('workspace-diagnostics').setup()
 require('nvim-treesitter.configs').setup {
   ensure_installed = { 'markdown', 'lua', 'svelte', 'css', 'html', 'typescript', 'java' },
@@ -71,9 +75,16 @@ require('rose-pine').setup {
   },
 }
 require('render-markdown').setup {
-  file_types = { 'copilot-chat' },
+  file_types = { 'copilot-chat', 'markdown' },
+  render_modes = true, -- n, c, t,
+  completions = {
+    lsp = { enabled = true },
+    blink = { enabled = true },
+  },
+  code = {
+    language = false,
+  },
 }
-
 require('mason').setup()
 require('mason-tool-installer').setup {
   ensure_installed = {
@@ -115,12 +126,44 @@ local function imap(...)
   k('i', ...)
 end
 
+local function autocmd(event, opts)
+  vim.api.nvim_create_autocmd(event, opts)
+end
+
 -- Sync with system clipboard
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
-require('mini.pick').setup()
+local pick = require 'mini.pick'
+pick.setup {}
+
+--- [P]ick [P]roject ---
+nmap('<leader>pp', function()
+  local projects = {}
+  local projects_path = vim.fn.expand '~/projects'
+  if vim.fn.isdirectory(projects_path) == 1 then
+    local dirs = vim.fn.readdir(projects_path)
+    for _, dir in ipairs(dirs) do
+      table.insert(projects, vim.fn.fnamemodify(vim.fn.fnamemodify(dir, ':h'), ':t'))
+    end
+  end
+  if #projects == 0 then
+    vim.notify('No projects found', vim.log.levels.WARN)
+    return
+  end
+  pick.start {
+    source = {
+      items = projects,
+      name = 'Projects',
+      choose = function(item)
+        vim.cmd('cd ' .. vim.fn.fnameescape(projects_path .. '/' .. item))
+        vim.schedule(pick.builtin.files)
+      end,
+    },
+  }
+end, { desc = '[P]ick [P]roject' })
+
 require('oil').setup {
   columns = {
     'icon',
@@ -194,6 +237,7 @@ require('CopilotChat').setup {
   temperature = 0, -- Lower = focused, higher = creative
   sticky = {
     '#buffer',
+    "Don't bullshit me. Be concise. Do not repeat existing code.",
   },
   highlight_headers = false,
   auto_fold = true,
@@ -310,6 +354,7 @@ nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
 
 -- [O]pen
 nmap('<leader>om', '<cmd>messages<cr>', { desc = '[O]pen [M]essages' })
+nmap('<leader>ow', vim.lsp.buf.workspace_diagnostics, { desc = '[O]pen [W]orkspace diagnostics' })
 nmap('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uicklist' })
 nmap('<leader>om', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
 nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
@@ -318,17 +363,37 @@ nmap('<leader>ov', '<cmd>vsplit<cr>', { desc = '[O]pen [V]ertical split' })
 nmap('<leader>oc', '<cmd>e $MYVIMRC<cr>', { desc = '[O]pen [C]onfig' })
 
 -- [C]opilot
-nmap('<leader>cp', '<cmd>CopilotChatPrompts<cr>', { desc = 'View/select prompt templates' })
-nmap('<leader>ct', '<cmd>CopilotChatToggle<cr>', { desc = 'Toggle chat window' })
-nmap('<leader>cs', '<cmd>CopilotChatStop<cr>', { desc = 'Stop current output' })
-nmap('<leader>cm', '<cmd>CopilotChatModels<cr>', { desc = 'View/select available models' })
-nmap('<leader>cw', ':CopilotChatSave ', { desc = 'Save chat' })
-nmap('<leader>cl', ':CopilotChatLoad ', { desc = 'Load chat' })
+local copilot_chat = require 'CopilotChat'
+local default_chat = 'chat'
+autocmd('VimEnter', {
+  callback = function()
+    copilot_chat.load(default_chat)
+  end,
+})
+autocmd('VimLeavePre', {
+  callback = function()
+    copilot_chat.save(default_chat)
+  end,
+})
+nmap('<leader>cp', copilot_chat.select_prompt, { desc = 'View/select [p]rompt templates' })
+nmap('<leader>ct', copilot_chat.toggle, { desc = '[T]oggle chat window' })
+nmap('<leader>cs', copilot_chat.stop, { desc = '[S]top current output' })
+nmap('<leader>cr', copilot_chat.reset, { desc = '[R]eset chat' })
+nmap('<leader>cm', copilot_chat.select_model, { desc = 'View/select available models' })
 
--- [P]ick
-nmap('<leader>pf', '<cmd>Pick files<cr>', { desc = '[P]ick [F]iles' })
-nmap('<leader>ph', '<cmd>Pick help<cr>', { desc = '[P]ick [H]elp' })
-nmap('<leader>pb', '<cmd>Pick buffers<cr>', { desc = '[P]ick [B]uffers' })
+-- Mini [P]ick
+nmap('<leader>pf', pick.builtin.files, { desc = '[P]ick [F]iles' })
+nmap('<leader>ph', pick.builtin.help, { desc = '[P]ick [H]elp' })
+nmap('<leader>pb', pick.builtin.buffers, { desc = '[P]ick [B]uffers' })
+nmap('<leader>pg', pick.builtin.grep_live, { desc = '[P]ick [G]rep' })
+nmap('<leader>pc', function()
+  local cmd = vim.fn.input 'Command to run > '
+  if cmd == '' then
+    vim.notify('No command provided', vim.log.levels.WARN)
+    return
+  end
+  pick.builtin.cli { command = cmd }
+end, { desc = '[P]ick [G]rep' })
 
 -- Actions
 nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
@@ -362,9 +427,59 @@ nvmap('<M-k>', '<cmd>cprev<cr>')
 nvmap('<M-h>', '<cmd>cfirst<cr>')
 nvmap('<M-l>', '<cmd>clast<cr>')
 
-------------------------------------
--- Quality of life configurations --
-------------------------------------
+--------------------------
+--- Lsp configurations ---
+--------------------------
+
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
+  callback = function(event)
+    local map = function(keys, func, desc, mode)
+      mode = mode or 'n'
+      vim.keymap.set(mode or 'n', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+    end
+    map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
+    map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+    map('grr', vim.lsp.buf.references, '[G]oto [R]eferences')
+    map('gri', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
+    map('grd', vim.lsp.buf.definition, '[G]oto [D]efinition')
+    map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+    map('grs', vim.lsp.buf.document_symbol, '[G]oto Document [S]ymbols')
+    map('grw', vim.lsp.buf.workspace_symbol, '[G]oto Workspace [S]ymbols')
+    map('grt', vim.lsp.buf.type_definition, '[G]oto [T]ype Definition')
+    map('grh', vim.lsp.buf.typehierarchy, '[G]oto Type [H]ierarchy')
+    local client = vim.lsp.get_client_by_id(event.data.client_id)
+    if client and client.supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
+      local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight', { clear = false })
+      vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+        buffer = event.buf,
+        group = highlight_augroup,
+        callback = vim.lsp.buf.document_highlight,
+      })
+      vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+        buffer = event.buf,
+        group = highlight_augroup,
+        callback = vim.lsp.buf.clear_references,
+      })
+      vim.api.nvim_create_autocmd('LspDetach', {
+        group = vim.api.nvim_create_augroup('lsp-detach', { clear = true }),
+        callback = function(event2)
+          vim.lsp.buf.clear_references()
+          vim.api.nvim_clear_autocmds { group = 'lsp-highlight', buffer = event2.buf }
+        end,
+      })
+    end
+    if client and client.supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+      map('<leader>th', function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+      end, '[T]oggle Inlay [H]ints')
+    end
+  end,
+})
+
+--------------------------------------
+--- Quality of life configurations ---
+--------------------------------------
 
 vim.diagnostic.config {
   severity_sort = true,
