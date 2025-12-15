@@ -183,7 +183,7 @@ require('oil').setup {
       return m ~= nil
     end,
     is_always_hidden = function(name)
-      return name == '.git'
+      return name == '.git' or name:lower():match 'ntuser'
     end,
   },
 }
