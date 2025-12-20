@@ -12,7 +12,7 @@ vim.o.signcolumn = 'yes'
 vim.o.tabstop = 2
 vim.o.softtabstop = 2
 vim.o.shiftwidth = 2
-vim.o.expandtab = true
+vim.o.expandtab = false
 vim.o.confirm = true
 vim.o.splitbelow = true
 vim.o.scrolloff = 15
@@ -92,6 +92,7 @@ require('mason-tool-installer').setup {
     'svelte-language-server', -- svelte
     'typescript-language-server', -- ts_ls
     'eslint-lsp', -- eslint
+    'json-lsp', -- jsonls
     'stylua',
     'prettierd',
     'prettier',
@@ -99,7 +100,7 @@ require('mason-tool-installer').setup {
   },
 }
 -- Uses Lspconfig names for servers
-vim.lsp.enable { 'lua_ls', 'svelte', 'ts_ls', 'eslint' }
+vim.lsp.enable { 'lua_ls', 'svelte', 'ts_ls', 'eslint', 'jsonls' }
 
 -- Keymaps --
 local function k(mode, key, func, opts)
@@ -364,17 +365,6 @@ nmap('<leader>oc', '<cmd>e $MYVIMRC<cr>', { desc = '[O]pen [C]onfig' })
 
 -- [C]opilot
 local copilot_chat = require 'CopilotChat'
-local default_chat = 'chat'
-autocmd('VimEnter', {
-  callback = function()
-    copilot_chat.load(default_chat)
-  end,
-})
-autocmd('VimLeavePre', {
-  callback = function()
-    copilot_chat.save(default_chat)
-  end,
-})
 nmap('<leader>cp', copilot_chat.select_prompt, { desc = 'View/select [p]rompt templates' })
 nmap('<leader>ct', copilot_chat.toggle, { desc = '[T]oggle chat window' })
 nmap('<leader>cs', copilot_chat.stop, { desc = '[S]top current output' })
@@ -480,6 +470,22 @@ vim.api.nvim_create_autocmd('LspAttach', {
 --------------------------------------
 --- Quality of life configurations ---
 --------------------------------------
+
+--- wsl, forward copy to windows clipboard ---
+--- Note: It does not update the powertools clipboard
+--- source: https://www.reddit.com/r/bashonubuntuonwindows/comments/be2q3l/how_do_i_copy_whole_text_from_vim_to_clipboard_at/el2vx7u/?utm_source=share&utm_medium=web2x
+local clip = '/mnt/c/Windows/System32/clip.exe'
+if vim.fn.executable(clip) == 1 then
+  vim.api.nvim_create_augroup('WSLYank', { clear = true })
+  vim.api.nvim_create_autocmd('TextYankPost', {
+    group = 'WSLYank',
+    callback = function()
+      if vim.v.event.operator == 'y' then
+        vim.fn.system(clip, vim.fn.getreg '0')
+      end
+    end,
+  })
+end
 
 vim.diagnostic.config {
   severity_sort = true,
