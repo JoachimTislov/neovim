@@ -1,7 +1,7 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.copilot_no_tab_map = true
-vim.g.have_nerd_font = true -- FiraCode
+vim.g.have_nerd_font = true
 vim.o.wrap = true
 vim.o.winborder = 'rounded'
 vim.swapfile = false
@@ -19,7 +19,11 @@ vim.o.scrolloff = 15
 vim.o.list = true
 vim.o.ignorecase = true
 vim.o.smartcase = true
+vim.o.cursorline = true
 vim.opt.listchars = { tab = '▸ ', trail = '·', nbsp = '␣' }
+vim.o.updatetime = 250
+-- problematic with some plugins
+-- vim.opt.autochdir = true
 
 vim.pack.add {
   'https://github.com/folke/lazydev.nvim',
@@ -49,9 +53,11 @@ vim.pack.add {
 require('blink.cmp').setup {
   fuzzy = { implementation = 'lua' },
 }
-
 require('colorizer').setup {
-  names = false,
+  user_default_options = {
+    names = false,
+    css = true,
+  },
 }
 require('workspace-diagnostics').setup()
 require('nvim-treesitter.configs').setup {
@@ -93,6 +99,7 @@ require('mason-tool-installer').setup {
     'typescript-language-server', -- ts_ls
     'eslint-lsp', -- eslint
     'json-lsp', -- jsonls
+    'gopls',
     'stylua',
     'prettierd',
     'prettier',
@@ -100,7 +107,7 @@ require('mason-tool-installer').setup {
   },
 }
 -- Uses Lspconfig names for servers
-vim.lsp.enable { 'lua_ls', 'svelte', 'ts_ls', 'eslint', 'jsonls' }
+vim.lsp.enable { 'lua_ls', 'svelte', 'ts_ls', 'eslint', 'jsonls', 'gopls' }
 
 -- Keymaps --
 local function k(mode, key, func, opts)
@@ -146,7 +153,7 @@ nmap('<leader>pp', function()
   if vim.fn.isdirectory(projects_path) == 1 then
     local dirs = vim.fn.readdir(projects_path)
     for _, dir in ipairs(dirs) do
-      table.insert(projects, vim.fn.fnamemodify(vim.fn.fnamemodify(dir, ':h'), ':t'))
+      table.insert(projects, dir)
     end
   end
   if #projects == 0 then
@@ -165,6 +172,40 @@ nmap('<leader>pp', function()
   }
 end, { desc = '[P]ick [P]roject' })
 
+--- [P]ick [D]iagnostics ---
+nmap('<leader>pd', function()
+  local diagnostics = vim.diagnostic.get()
+  if #diagnostics == 0 then
+    vim.notify('No diagnostics found', vim.log.levels.INFO)
+    return
+  end
+
+  local items = {}
+  for _, diag in ipairs(diagnostics) do
+    local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(diag.bufnr), ':.')
+    local severity = vim.diagnostic.severity[diag.severity]
+    table.insert(items, {
+      text = string.format('%s:%d:%d [%s] %s', filename, diag.lnum + 1, diag.col + 1, severity, diag.message),
+      bufnr = diag.bufnr,
+      lnum = diag.lnum + 1,
+      col = diag.col + 1,
+    })
+  end
+
+  pick.start {
+    source = {
+      items = items,
+      name = 'Diagnostics',
+      choose = function(item)
+        vim.schedule(function()
+          vim.api.nvim_set_current_buf(item.bufnr)
+          vim.api.nvim_win_set_cursor(0, { item.lnum, item.col - 1 })
+        end)
+      end,
+    },
+  }
+end, { desc = '[P]ick [D]iagnostics' })
+
 require('oil').setup {
   columns = {
     'icon',
@@ -172,6 +213,7 @@ require('oil').setup {
     'size',
     'mtime',
   },
+  skip_confirm_for_simple_edits = true,
   keymaps = {
     ['<C-h>'] = false,
     ['<C-l>'] = false,
@@ -204,8 +246,13 @@ require('conform').setup {
     java = { 'google-java-format' },
   },
 }
-require('neogit').setup {
+local neogit = require 'neogit'
+neogit.setup {
   kind = 'floating',
+  integrations = {
+    diffview = true,
+    mini_pick = true,
+  },
 }
 require('rose-pine').setup {
   -- https://github.com/rose-pine/neovim
@@ -228,6 +275,7 @@ require('which-key').setup {
     { '<leader>q', group = '[Q]uit' },
     { '<leader>p', group = '[P]ick' },
     { '<leader>o', group = '[O]pen' },
+    { '<leader>l', group = '[L]ist' },
     { '<leader>c', group = '[C]opilot' },
     { '<leader>g', group = '[G]it Hunk', mode = { 'n', 'v' } },
   },
@@ -260,7 +308,7 @@ require('CopilotChat').setup {
 }
 
 -- Remap <Tab> to <S-Tab> for copilot accept to avoid conflict with other plugins
-imap('<S-Tab>', 'copilot#Accept("\\<S-Tab>")', { expr = true, replace_keycodes = false })
+imap('<S-Tab>', 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
 imap('<C-A-j>', 'copilot#Next()', { expr = true, silent = true, script = true })
 
 --- LuaSnip keymaps ---
@@ -354,7 +402,6 @@ nmap('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
 nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
 
 -- [O]pen
-nmap('<leader>om', '<cmd>messages<cr>', { desc = '[O]pen [M]essages' })
 nmap('<leader>ow', vim.lsp.buf.workspace_diagnostics, { desc = '[O]pen [W]orkspace diagnostics' })
 nmap('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uicklist' })
 nmap('<leader>om', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
@@ -362,6 +409,12 @@ nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
 nmap('<leader>os', '<cmd>split<cr>', { desc = '[O]pen [S]plit' })
 nmap('<leader>ov', '<cmd>vsplit<cr>', { desc = '[O]pen [V]ertical split' })
 nmap('<leader>oc', '<cmd>e $MYVIMRC<cr>', { desc = '[O]pen [C]onfig' })
+
+-- [L]ist
+nmap('<leader>lq', '<cmd>copen<cr>', { desc = '[L]ist [Q]uickfix' })
+nmap('<leader>lm', '<cmd>messages<cr>', { desc = '[L]ist [M]essages' })
+nmap('<leader>lc', '<cmd>chistory<cr>', { desc = '[L]ist [C]History' })
+nmap('<leader>ll', '<cmd>lhistory<cr>', { desc = '[L]ist [L]History' })
 
 -- [C]opilot
 local copilot_chat = require 'CopilotChat'
@@ -383,14 +436,19 @@ nmap('<leader>pc', function()
     return
   end
   pick.builtin.cli { command = cmd }
-end, { desc = '[P]ick [G]rep' })
+end, { desc = '[P]ick [C]ommand' })
 
 -- Actions
 nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
-nmap('<leader>lf', vim.lsp.buf.format, { desc = 'Format file' })
 nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
 nmap('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
 nmap('<leader>s', ':source<cr>')
+
+-- Quickfix list navigation
+-- nmap('<M-j>', '<cmd>cnext<cr>')
+-- nmap('<M-k>', '<cmd>cprev<cr>')
+-- nmap('<M-h>', '<cmd>cfirst<cr>')
+-- nmap('<M-l>', '<cmd>clast<cr>')
 
 -- Copilot
 nmap('<leader>ce', '<cmd>Copilot enable<cr>', { desc = 'Enable' })
@@ -426,7 +484,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(event)
     local map = function(keys, func, desc, mode)
       mode = mode or 'n'
-      vim.keymap.set(mode or 'n', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+      vim.keymap.set(mode or 'n', keys, func, { buffer = event.buf, desc = desc })
     end
     map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
     map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
@@ -597,3 +655,78 @@ vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx)
   -- Use default handler
   vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx)
 end
+
+---------------------------------------------------------
+--- prevent auto inserting comment prefix on new line ---
+---------------------------------------------------------
+
+autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('format-options', { clear = true }),
+  callback = function()
+    vim.opt_local.formatoptions:remove 'o'
+  end,
+})
+
+----------------------------------------------------
+--- restore cursor position when reopening files ---
+----------------------------------------------------
+
+autocmd('BufReadPost', {
+  group = vim.api.nvim_create_augroup('restore-cursor', { clear = true }),
+  callback = function(args)
+    local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+    local lcount = vim.api.nvim_buf_line_count(args.buf)
+    if mark[1] > 0 and mark[1] <= lcount then
+      if pcall(vim.api.nvim_win_set_cursor, 0, mark) then
+        return
+      end
+      vim.schedule(function()
+        vim.cmd 'normal! zz'
+      end)
+    end
+  end,
+})
+
+-------------------------------------------------------
+-- open help files in a vertical split on the right ---
+-------------------------------------------------------
+
+autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('help-right', { clear = true }),
+  pattern = 'help',
+  command = 'wincmd L',
+})
+
+-------------------------------------------------------
+-- equalize window sizes when resizing Neovim window ---
+-------------------------------------------------------
+
+autocmd('VimResized', {
+  group = vim.api.nvim_create_augroup('resize-windows', { clear = true }),
+  command = 'wincmd =',
+})
+
+--- activate dosini treesitter for .env files ---
+autocmd('BufRead', {
+  group = vim.api.nvim_create_augroup('dotenv-ft', { clear = true }),
+  pattern = { '.env.*', '.env' },
+  callback = function()
+    vim.bo.filetype = 'dosini'
+  end,
+})
+
+--- enable cursorline ---
+autocmd({ 'WinEnter', 'BufEnter' }, {
+  group = vim.api.nvim_create_augroup('active-cursorline', { clear = true }),
+  callback = function()
+    vim.opt_local.cursorline = true
+  end,
+})
+
+--- disable cursorline
+autocmd({ 'WinLeave', 'BufLeave' }, {
+  group = vim.api.nvim_create_augroup('inactive-cursorline', { clear = true }),
+  callback = function()
+    vim.opt_local.cursorline = false
+  end,
+})

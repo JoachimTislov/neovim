@@ -1,83 +1,87 @@
 {
   "plugins": {
     "CopilotChat.nvim": {
-      "rev": "df5376c",
+      "rev": "df5376c132382dd47e3e552612940cbf25b3580c",
       "src": "https://github.com/CopilotC-Nvim/CopilotChat.nvim"
     },
     "LuaSnip": {
-      "rev": "3732756",
+      "rev": "3732756842a2f7e0e76a7b0487e9692072857277",
       "src": "https://github.com/L3MON4D3/LuaSnip"
     },
     "blink.cmp": {
-      "rev": "7beba91",
+      "rev": "7beba91fdc61fdc84ea6d6395d614671e609f895",
       "src": "https://github.com/Saghen/blink.cmp"
     },
     "conform.nvim": {
-      "rev": "4993e07",
+      "rev": "4993e07fac6679d0a5005aa7499e0bad2bd39f19",
       "src": "https://github.com/stevearc/conform.nvim"
     },
     "copilot.vim": {
-      "rev": "f89e977",
+      "rev": "f89e977c87180519ba3b942200e3d05b17b1e2fc",
       "src": "https://github.com/github/copilot.vim"
     },
     "diffview.nvim": {
-      "rev": "4516612",
+      "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
       "src": "https://github.com/sindrets/diffview.nvim"
     },
     "gitsigns.nvim": {
-      "rev": "5813e48",
+      "rev": "5813e4878748805f1518cee7abb50fd7205a3a48",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
     "lazydev.nvim": {
-      "rev": "5231c62",
+      "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
       "src": "https://github.com/folke/lazydev.nvim"
     },
     "mason-tool-installer.nvim": {
-      "rev": "517ef59",
+      "rev": "517ef5994ef9d6b738322664d5fdd948f0fdeb46",
       "src": "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim"
     },
     "mason.nvim": {
-      "rev": "57e5a8a",
+      "rev": "57e5a8addb8c71fb063ee4acda466c7cf6ad2800",
       "src": "https://github.com/williamboman/mason.nvim"
     },
     "mini.pick": {
-      "rev": "b435139",
+      "rev": "b4351399db5043a781a32699a1bde60b747f711f",
       "src": "https://github.com/echasnovski/mini.pick"
     },
     "neogit": {
-      "rev": "300949af",
+      "rev": "300949af63fa48cb6bc8d93822b78cb9dbb4fd75",
       "src": "https://github.com/NeogitOrg/neogit"
     },
     "neovim": {
-      "rev": "cf2a288",
+      "rev": "cf2a288696b03d0934da713d66c6d71557b5c997",
       "src": "https://github.com/rose-pine/neovim"
     },
+    "nvim": {
+      "rev": "76a8d0515024cc55d8bd26fc13f1af88faef3ebf",
+      "src": "https://github.com/catppuccin/nvim"
+    },
     "nvim-autopairs": {
-      "rev": "7a2c97c",
+      "rev": "7a2c97cccd60abc559344042fefb1d5a85b3e33b",
       "src": "https://github.com/windwp/nvim-autopairs"
     },
     "nvim-colorizer.lua": {
-      "rev": "81e676d",
+      "rev": "81e676d3203c9eb6e4c0ccf1eba1679296ef923f",
       "src": "https://github.com/catgoose/nvim-colorizer.lua"
     },
     "nvim-lspconfig": {
-      "rev": "effe4bf",
+      "rev": "effe4bf2e1afb881ea67291c648b68dd3dfc927a",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-treesitter": {
-      "rev": "42fc28ba",
+      "rev": "42fc28ba918343ebfd5565147a42a26580579482",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-ts-autotag": {
-      "rev": "c4ca798",
+      "rev": "c4ca798ab95b316a768d51eaaaee48f64a4a46bc",
       "src": "https://github.com/windwp/nvim-ts-autotag"
     },
     "oil.nvim": {
-      "rev": "cbcb3f9",
+      "rev": "cbcb3f997f6f261c577b943ec94e4ef55108dd95",
       "src": "https://github.com/stevearc/oil.nvim"
     },
     "plenary.nvim": {
-      "rev": "b9fd522",
+      "rev": "b9fd5226c2f76c951fc8ed5923d85e4de065e509",
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
     "project.nvim": {
@@ -85,15 +89,15 @@
       "src": "https://github.com/ahmedkhalf/project.nvim"
     },
     "render-markdown.nvim": {
-      "rev": "6e0e890",
+      "rev": "6e0e8902dac70fecbdd8ce557d142062a621ec38",
       "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
     },
     "which-key.nvim": {
-      "rev": "3aab214",
+      "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
       "src": "https://github.com/folke/which-key.nvim"
     },
     "workspace-diagnostics.nvim": {
-      "rev": "60f9175",
+      "rev": "60f9175b2501ae3f8b1aba9719c0df8827610c8e",
       "src": "https://github.com/artemave/workspace-diagnostics.nvim"
     }
   }
