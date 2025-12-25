@@ -500,7 +500,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
     map('grs', vim.lsp.buf.document_symbol, '[G]oto Document [S]ymbols')
     map('grS', vim.lsp.buf.workspace_symbol, '[G]oto Workspace [S]ymbols')
-    map('grw', vim.lsp.buf.workspace_diagnostics, { desc = '[O]pen [W]orkspace diagnostics' })
+    map('grw', vim.lsp.buf.workspace_diagnostics, '[G]oto [W]orkspace diagnostics')
     map('grt', vim.lsp.buf.type_definition, '[G]oto [T]ype Definition')
     map('grh', vim.lsp.buf.typehierarchy, '[G]oto Type [H]ierarchy')
   end,
