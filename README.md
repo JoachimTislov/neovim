@@ -8,10 +8,10 @@ Compatible with Neovim 0.12 and above. Works on hopyefully all OSes that Neovim 
     - `vim.diagnostics.opts.float`?
 - Add "f" - find, in combination with operators ( d, c, y ) to "do" until specified char.
 - setup proper diagnostics workflow
+    - add method in on_attach to load all files and thereby get all diagnostics
+    - https://github.com/artemave/workspace-diagnostics.nvim
 - move between error/warning/hint/info (keybind)
-- quickfix list (keybind)
 - preview to mini.picker
-- project picker and set vim cwd to selected project
 - custom config support
 - look at old config for forgotten features
 - mini, snacks, github prs manager
@@ -19,7 +19,6 @@ Compatible with Neovim 0.12 and above. Works on hopyefully all OSes that Neovim 
 - web icons
 - fzf, cmp (cmp-nvim-lsp?)
 - fininsh(/add more) snippets
-- figure out how to disabled colored names for colorizer
 
 ## Windows specific features
 

@@ -26,11 +26,15 @@ vim.o.updatetime = 250
 -- vim.opt.autochdir = true
 
 vim.pack.add {
-  'https://github.com/folke/lazydev.nvim',
-  'https://github.com/nvim-lua/plenary.nvim', -- dependency of many plugins. Storage of complete lua functions
+  -- Dependencies of many plugins
+  'https://github.com/folke/lazydev.nvim', -- Helper for developing plugins
+  'https://github.com/nvim-lua/plenary.nvim', -- Storage of complete lua functions
+  'https://github.com/nvim-mini/mini.icons',
+
+  -- Plugins
   'https://github.com/stevearc/oil.nvim',
   'https://github.com/stevearc/conform.nvim',
-  'https://github.com/echasnovski/mini.pick',
+  'https://github.com/nvim-mini/mini.pick',
   'https://github.com/neovim/nvim-lspconfig',
   'https://github.com/williamboman/mason.nvim',
   'https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim',
@@ -46,13 +50,16 @@ vim.pack.add {
   'https://github.com/windwp/nvim-ts-autotag',
   'https://github.com/nvim-treesitter/nvim-treesitter',
   'https://github.com/catgoose/nvim-colorizer.lua',
-  'https://github.com/artemave/workspace-diagnostics.nvim',
   'https://github.com/github/copilot.vim',
   'https://github.com/lewis6991/gitsigns.nvim',
+  'https://github.com/artemave/workspace-diagnostics.nvim',
+  'https://github.com/sahilsehwag/macrobank.nvim',
 }
 require('blink.cmp').setup {
   fuzzy = { implementation = 'lua' },
 }
+require('mini.icons').setup()
+require('macrobank').setup()
 require('colorizer').setup {
   user_default_options = {
     names = false,
@@ -278,6 +285,7 @@ require('which-key').setup {
     { '<leader>l', group = '[L]ist' },
     { '<leader>c', group = '[C]opilot' },
     { '<leader>g', group = '[G]it Hunk', mode = { 'n', 'v' } },
+    { '<leader>gr', group = 'Lsp requests' },
   },
 }
 
@@ -402,8 +410,7 @@ nmap('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
 nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
 
 -- [O]pen
-nmap('<leader>ow', vim.lsp.buf.workspace_diagnostics, { desc = '[O]pen [W]orkspace diagnostics' })
-nmap('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uicklist' })
+nmap('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
 nmap('<leader>om', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
 nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
 nmap('<leader>os', '<cmd>split<cr>', { desc = '[O]pen [S]plit' })
@@ -435,7 +442,7 @@ nmap('<leader>pc', function()
     vim.notify('No command provided', vim.log.levels.WARN)
     return
   end
-  pick.builtin.cli { command = cmd }
+  pick.builtin.cli { command = vim.split(cmd, ' ') }
 end, { desc = '[P]ick [C]ommand' })
 
 -- Actions
@@ -483,7 +490,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
   callback = function(event)
     local map = function(keys, func, desc, mode)
-      mode = mode or 'n'
       vim.keymap.set(mode or 'n', keys, func, { buffer = event.buf, desc = desc })
     end
     map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
@@ -493,35 +499,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
     map('grd', vim.lsp.buf.definition, '[G]oto [D]efinition')
     map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
     map('grs', vim.lsp.buf.document_symbol, '[G]oto Document [S]ymbols')
-    map('grw', vim.lsp.buf.workspace_symbol, '[G]oto Workspace [S]ymbols')
+    map('grS', vim.lsp.buf.workspace_symbol, '[G]oto Workspace [S]ymbols')
+    map('grw', vim.lsp.buf.workspace_diagnostics, { desc = '[O]pen [W]orkspace diagnostics' })
     map('grt', vim.lsp.buf.type_definition, '[G]oto [T]ype Definition')
     map('grh', vim.lsp.buf.typehierarchy, '[G]oto Type [H]ierarchy')
-    local client = vim.lsp.get_client_by_id(event.data.client_id)
-    if client and client.supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
-      local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight', { clear = false })
-      vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-        buffer = event.buf,
-        group = highlight_augroup,
-        callback = vim.lsp.buf.document_highlight,
-      })
-      vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-        buffer = event.buf,
-        group = highlight_augroup,
-        callback = vim.lsp.buf.clear_references,
-      })
-      vim.api.nvim_create_autocmd('LspDetach', {
-        group = vim.api.nvim_create_augroup('lsp-detach', { clear = true }),
-        callback = function(event2)
-          vim.lsp.buf.clear_references()
-          vim.api.nvim_clear_autocmds { group = 'lsp-highlight', buffer = event2.buf }
-        end,
-      })
-    end
-    if client and client.supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-      map('<leader>th', function()
-        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-      end, '[T]oggle Inlay [H]ints')
-    end
   end,
 })
 
