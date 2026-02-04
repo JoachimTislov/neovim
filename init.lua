@@ -18,7 +18,7 @@ vim.o.splitbelow = true
 vim.o.scrolloff = 15
 vim.o.list = true
 vim.o.ignorecase = true
-vim.o.smartcase = true
+vim.o.smartcase = false
 vim.o.cursorline = true
 vim.opt.listchars = { tab = '▸ ', trail = '·', nbsp = '␣' }
 vim.o.updatetime = 250
@@ -38,13 +38,16 @@ vim.pack.add {
   'https://github.com/stevearc/oil.nvim', -- File explorer
   'https://github.com/stevearc/conform.nvim', -- Code formatter
   'https://github.com/nvim-mini/mini.pick', -- Fuzzy picker
+  'https://github.com/nvim-mini/mini.surround', -- Surround
   'https://github.com/neovim/nvim-lspconfig', -- LSP configurations
+  'https://github.com/pmizio/typescript-tools.nvim', -- Replacement for ts_ls
   'https://github.com/williamboman/mason.nvim', -- Installer UI
   'https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim', -- Auto install packages
   'https://github.com/lewis6991/gitsigns.nvim', -- Git signs in signcolumn
   'https://github.com/NeogitOrg/neogit', -- Git interface
   'https://github.com/sindrets/diffview.nvim', -- Git diff viewer
   'https://github.com/L3MON4D3/LuaSnip', -- Snippet engine
+  'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol
   'https://github.com/Saghen/blink.cmp', -- Fuzzy completion source
   'https://github.com/folke/which-key.nvim', -- Keybinding helper
   'https://github.com/github/copilot.vim', -- GitHub Copilot
@@ -54,27 +57,22 @@ vim.pack.add {
   'https://github.com/windwp/nvim-autopairs', -- Create pairs like (), {}, []
   'https://github.com/windwp/nvim-ts-autotag', -- Auto close and rename html tags
   'https://github.com/nvim-treesitter/nvim-treesitter', -- Treesitter configurations
-  'https://github.com/kylechui/nvim-surround', -- Surround text objects
   'https://github.com/catgoose/nvim-colorizer.lua', -- Color highlighter
   'https://github.com/christoomey/vim-tmux-navigator', -- Tmux navigation
   'https://github.com/mfussenegger/nvim-dap', -- Debug Adapter Protocol client
   'https://github.com/igorlfs/nvim-dap-view', -- Minimal DAP UI TODO: Test this
-  'https://github.com/rcarriga/nvim-dap-ui', -- UI for nvim-dap
-  'https://github.com/nvim-neotest/nvim-nio', -- dependency of nvim-dap-ui
   'https://github.com/leoluz/nvim-dap-go', -- Go adapter
 
   -- not important but can be nice to have
   'https://github.com/artemave/workspace-diagnostics.nvim', -- Loads diagnostics for all files in workspace
-  'https://github.com/j-hui/fidget.nvim', -- LSP status
   'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
   'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
 }
 require('blink.cmp').setup {
   fuzzy = { implementation = 'lua' },
 }
-require('fidget').setup()
-require('nvim-surround').setup {}
 require('mini.icons').setup()
+require('mini.surround').setup()
 require('guess-indent').setup {}
 require('colorizer').setup {
   user_default_options = {
@@ -93,7 +91,7 @@ require('colorizer').setup {
 --   require('workspace-diagnostics').populate_workspace_diagnostics(client, bufnr)
 -- end
 require('nvim-treesitter.configs').setup {
-  ensure_installed = { 'markdown', 'lua', 'svelte', 'css', 'html', 'typescript', 'java' },
+  ensure_installed = { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java' },
   auto_install = true,
   highlight = {
     enable = true,
@@ -128,10 +126,10 @@ require('mason-tool-installer').setup {
   ensure_installed = {
     'lua-language-server', -- lua_ls
     'svelte-language-server', -- svelte
-    'typescript-language-server', -- ts_ls
+    -- 'typescript-language-server', -- ts_ls
     'eslint-lsp', -- eslint
     'json-lsp', -- jsonls
-    'gopls',
+    -- 'gopls',
     'stylua',
     'prettierd',
     'prettier',
@@ -139,7 +137,10 @@ require('mason-tool-installer').setup {
   },
 }
 -- Uses Lspconfig names for servers
-vim.lsp.enable { 'lua_ls', 'svelte', 'ts_ls', 'eslint', 'jsonls', 'gopls' }
+vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls' }
+
+-- Replace ts_ls
+require('typescript-tools').setup {}
 
 -- Keymaps --
 local function k(mode, key, func, opts)
@@ -181,7 +182,7 @@ nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
 local pick = require 'mini.pick'
 pick.setup {
   mappings = {
-    toggle_preview = '<Space>',
+    toggle_preview = '<C-Space>',
   },
 }
 
@@ -328,7 +329,7 @@ require('CopilotChat').setup {
   temperature = 0, -- Lower = focused, higher = creative
   sticky = {
     '#buffer',
-    "Don't bullshit me. Be concise. Do not repeat existing code.",
+    "Don't bullshit me. Be concise and DO NOT repeat existing code.",
   },
   highlight_headers = false,
   auto_fold = true,
@@ -444,6 +445,7 @@ nmap('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
 nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
 
 -- [O]pen
+nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
 nmap('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
 nmap('<leader>oM', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
 nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
@@ -545,73 +547,73 @@ vim.api.nvim_create_autocmd('LspAttach', {
     map('grh', vim.lsp.buf.typehierarchy, '[G]oto Type [H]ierarchy')
   end,
 })
-
----------------------------------------------
---- Debug Adapter Protocol configurations ---
----------------------------------------------
-
-local dap = require 'dap'
-local dapui = require 'dapui'
-local widgets = require 'dap.ui.widgets'
-
-nmap('<leader>dh', widgets.hover, { desc = 'Debug: Hover' })
-nmap('<leader>dp', widgets.preview, { desc = 'Debug: Preview' })
-nmap('<leader>df', function()
-  widgets.centered_float(widgets.frames)
-end, { desc = 'Debug: View Frames' })
-nmap('<leader>ds', function()
-  widgets.centered_float(widgets.scopes)
-end, { desc = 'Debug: View Scopes' })
--- restart and run_last are basically the same, but run_last is more usable
-nmap('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
--- nmap('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
-nmap('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
-nmap('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
-nmap('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
-nmap('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
-nmap('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
-nmap('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
-nmap('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
-nmap('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
-nmap('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
-nmap('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
-nmap('<leader>dB', function()
-  dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
-end, { desc = 'Debug: Set Breakpoint' })
--- TODO: enable these once I start using Go tests. dt conflicts with restart
--- Need better keybind
--- nmap('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
--- nmap('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
-
--- For more information, see |:help nvim-dap-ui|
-dapui.setup {
-  icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
-  controls = {
-    icons = {
-      pause = '⏸',
-      play = '▶',
-      step_into = '⏎',
-      step_over = '⏭',
-      step_out = '⏮',
-      step_back = 'b',
-      run_last = '▶▶',
-      terminate = '⏹',
-      disconnect = '⏏',
-    },
-  },
-}
-
-dap.configurations.lua = {
-  {
-    type = 'nlua',
-    request = 'attach',
-    name = 'Attach to running Neovim instance',
-  },
-}
-
-dap.adapters.nlua = function(callback, config)
-  callback { type = 'server', host = config.host or '127.0.0.1', port = config.port or 8086 }
-end
+--
+-- ---------------------------------------------
+-- --- Debug Adapter Protocol configurations ---
+-- ---------------------------------------------
+--
+-- local dap = require 'dap'
+-- local dapui = require 'dapui'
+-- local widgets = require 'dap.ui.widgets'
+--
+-- nmap('<leader>dh', widgets.hover, { desc = 'Debug: Hover' })
+-- nmap('<leader>dp', widgets.preview, { desc = 'Debug: Preview' })
+-- nmap('<leader>df', function()
+--   widgets.centered_float(widgets.frames)
+-- end, { desc = 'Debug: View Frames' })
+-- nmap('<leader>ds', function()
+--   widgets.centered_float(widgets.scopes)
+-- end, { desc = 'Debug: View Scopes' })
+-- -- restart and run_last are basically the same, but run_last is more usable
+-- nmap('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
+-- -- nmap('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
+-- nmap('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
+-- nmap('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
+-- nmap('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
+-- nmap('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
+-- nmap('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
+-- nmap('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
+-- nmap('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
+-- nmap('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
+-- nmap('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
+-- nmap('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
+-- nmap('<leader>dB', function()
+--   dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+-- end, { desc = 'Debug: Set Breakpoint' })
+-- -- TODO: enable these once I start using Go tests. dt conflicts with restart
+-- -- Need better keybind
+-- -- nmap('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
+-- -- nmap('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
+--
+-- -- For more information, see |:help nvim-dap-ui|
+-- dapui.setup {
+--   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+--   controls = {
+--     icons = {
+--       pause = '⏸',
+--       play = '▶',
+--       step_into = '⏎',
+--       step_over = '⏭',
+--       step_out = '⏮',
+--       step_back = 'b',
+--       run_last = '▶▶',
+--       terminate = '⏹',
+--       disconnect = '⏏',
+--     },
+--   },
+-- }
+--
+-- dap.configurations.lua = {
+--   {
+--     type = 'nlua',
+--     request = 'attach',
+--     name = 'Attach to running Neovim instance',
+--   },
+-- }
+--
+-- dap.adapters.nlua = function(callback, config)
+--   callback { type = 'server', host = config.host or '127.0.0.1', port = config.port or 8086 }
+-- end
 
 -- Change breakpoint icons
 -- vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
@@ -624,22 +626,22 @@ end
 --   local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
 --   vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
 -- end
-
-dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-dap.listeners.before.event_exited['dapui_config'] = dapui.close
-
-require('dap-go').setup {
-  dap_configurations = {
-    {
-      type = 'go',
-      name = 'Debug Main',
-      request = 'launch',
-      program = 'main.go',
-    },
-  },
-  delve = {},
-}
+--
+-- dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+-- dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+-- dap.listeners.before.event_exited['dapui_config'] = dapui.close
+--
+-- require('dap-go').setup {
+--   dap_configurations = {
+--     {
+--       type = 'go',
+--       name = 'Debug Main',
+--       request = 'launch',
+--       program = 'main.go',
+--     },
+--   },
+--   delve = {},
+-- }
 
 --------------------------------------
 --- Quality of life configurations ---
