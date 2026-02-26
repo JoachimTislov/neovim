@@ -328,8 +328,9 @@ require('CopilotChat').setup {
   model = 'claude-opus-4.6',
   temperature = 0, -- Lower = focused, higher = creative
   sticky = {
-    '#buffer',
+    '#buffers',
     "Don't bullshit me. Be concise and DO NOT repeat existing code.",
+    '@copilot',
   },
   highlight_headers = false,
   auto_fold = true,
@@ -344,9 +345,11 @@ require('CopilotChat').setup {
   },
   separator = '━━',
   window = {
-    layout = 'vertical', -- 'vertical', 'horizontal', 'float', 'replace'
-    -- width = 0.5, -- 50% of screen width
-    border = 'solid', -- 'single', 'double', 'rounded', 'solid'
+    layout = 'horizontal', -- 'vertical', 'horizontal', 'float', 'replace'
+    -- width = 800, -- Fixed width in columns
+    -- height = 20, -- Fixed height in rows
+    -- zindex = 100, -- Ensure window stays on top
+    -- border = 'solid', -- 'single', 'double', 'rounded', 'solid'
   },
 }
 
