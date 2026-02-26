@@ -60,7 +60,7 @@ vim.pack.add {
   'https://github.com/catgoose/nvim-colorizer.lua', -- Color highlighter
   'https://github.com/christoomey/vim-tmux-navigator', -- Tmux navigation
   'https://github.com/mfussenegger/nvim-dap', -- Debug Adapter Protocol client
-  'https://github.com/igorlfs/nvim-dap-view', -- Minimal DAP UI TODO: Test this
+  'https://github.com/igorlfs/nvim-dap-view', -- Minimal DAP UI
   'https://github.com/leoluz/nvim-dap-go', -- Go adapter
 
   -- not important but can be nice to have
@@ -325,7 +325,7 @@ require('which-key').setup {
 }
 
 require('CopilotChat').setup {
-  model = 'claude-sonnet-4',
+  model = 'claude-opus-4.6',
   temperature = 0, -- Lower = focused, higher = creative
   sticky = {
     '#buffer',
@@ -547,101 +547,81 @@ vim.api.nvim_create_autocmd('LspAttach', {
     map('grh', vim.lsp.buf.typehierarchy, '[G]oto Type [H]ierarchy')
   end,
 })
---
--- ---------------------------------------------
--- --- Debug Adapter Protocol configurations ---
--- ---------------------------------------------
---
--- local dap = require 'dap'
--- local dapui = require 'dapui'
--- local widgets = require 'dap.ui.widgets'
---
--- nmap('<leader>dh', widgets.hover, { desc = 'Debug: Hover' })
--- nmap('<leader>dp', widgets.preview, { desc = 'Debug: Preview' })
--- nmap('<leader>df', function()
---   widgets.centered_float(widgets.frames)
--- end, { desc = 'Debug: View Frames' })
--- nmap('<leader>ds', function()
---   widgets.centered_float(widgets.scopes)
--- end, { desc = 'Debug: View Scopes' })
--- -- restart and run_last are basically the same, but run_last is more usable
--- nmap('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
--- -- nmap('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
--- nmap('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
--- nmap('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
--- nmap('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
--- nmap('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
--- nmap('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
--- nmap('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
--- nmap('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
--- nmap('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
--- nmap('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
--- nmap('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
--- nmap('<leader>dB', function()
---   dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
--- end, { desc = 'Debug: Set Breakpoint' })
--- -- TODO: enable these once I start using Go tests. dt conflicts with restart
--- -- Need better keybind
--- -- nmap('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
--- -- nmap('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
---
--- -- For more information, see |:help nvim-dap-ui|
--- dapui.setup {
---   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
---   controls = {
---     icons = {
---       pause = '⏸',
---       play = '▶',
---       step_into = '⏎',
---       step_over = '⏭',
---       step_out = '⏮',
---       step_back = 'b',
---       run_last = '▶▶',
---       terminate = '⏹',
---       disconnect = '⏏',
---     },
---   },
--- }
---
--- dap.configurations.lua = {
---   {
---     type = 'nlua',
---     request = 'attach',
---     name = 'Attach to running Neovim instance',
---   },
--- }
---
--- dap.adapters.nlua = function(callback, config)
---   callback { type = 'server', host = config.host or '127.0.0.1', port = config.port or 8086 }
--- end
+
+---------------------------------------------
+--- Debug Adapter Protocol configurations ---
+---------------------------------------------
+
+local dap = require 'dap'
+local dapgo = require 'dap-go'
+
+dapgo.setup {
+  dap_configurations = {
+    {
+      type = 'go',
+      name = 'Debug Main',
+      request = 'launch',
+      program = 'main.go',
+    },
+  },
+  delve = {},
+}
+-- https://igorlfs.github.io/nvim-dap-view/home
+local dapview = require 'dap-view'
+nmap('<leader>dv', dapview.toggle, { desc = 'Debug: Open [v]iew' })
+-- restart and run_last are basically the same, but run_last is more usable
+nmap('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
+-- nmap('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
+nmap('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
+nmap('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
+nmap('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
+nmap('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
+nmap('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
+nmap('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
+nmap('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
+nmap('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
+nmap('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
+nmap('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
+nmap('<leader>dB', function()
+  dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+end, { desc = 'Debug: Set Breakpoint' })
+-- TODO: enable these once I start using Go tests. 'dt' conflicts with restart
+-- Need better keybind
+-- nmap('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
+-- nmap('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
+
+dap.configurations.lua = {
+  {
+    type = 'nlua',
+    request = 'attach',
+    name = 'Attach to running Neovim instance',
+  },
+}
+
+dap.adapters.nlua = function(callback, config)
+  callback { type = 'server', host = config.host or '127.0.0.1', port = config.port or 8086 }
+end
 
 -- Change breakpoint icons
--- vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
--- vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
--- local breakpoint_icons = vim.g.have_nerd_font
---     and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
---   or { Breakpoint = '●', BreakpointCondition = '⊜', BreakpointRejected = '⊘', LogPoint = '◆', Stopped = '⭔' }
--- for type, icon in pairs(breakpoint_icons) do
---   local tp = 'Dap' .. type
---   local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
---   vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
--- end
---
--- dap.listeners.after.event_initialized['dapui_config'] = dapui.open
--- dap.listeners.before.event_terminated['dapui_config'] = dapui.close
--- dap.listeners.before.event_exited['dapui_config'] = dapui.close
---
--- require('dap-go').setup {
---   dap_configurations = {
---     {
---       type = 'go',
---       name = 'Debug Main',
---       request = 'launch',
---       program = 'main.go',
---     },
---   },
---   delve = {},
--- }
+vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
+vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
+for type, icon in pairs { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '⊘', LogPoint = '', Stopped = '' } do
+  local tp = 'Dap' .. type
+  local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
+  vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
+end
+
+require('dap-go').setup {
+  dap_configurations = {
+    {
+      type = 'go',
+      name = 'Debug Main',
+      request = 'launch',
+      program = 'main.go',
+    },
+  },
+  delve = {},
+}
 
 --------------------------------------
 --- Quality of life configurations ---
