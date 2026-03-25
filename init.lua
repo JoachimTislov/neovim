@@ -27,6 +27,26 @@ vim.o.updatetime = 250
 vim.o.chistory = 100
 vim.o.lhistory = 100
 
+-- TODOs --
+-- Use vim.ui.select?
+-- Center buffer view ?
+-- Consider adding something like ThePrimeagen's 99 or otaleghani/dwight.nvim
+-- Replace or add telescope in addition to mini.pick
+-- fix typescript ts_ls and svelte ls. Not showing refs in svelte files from ts files
+--  - https://github.com/neovim/nvim-lspconfig/issues/725
+-- Research native functionality
+--  - https://www.reddit.com/r/neovim/comments/1q3tnz5/10_builtin_neovim_features_youre_probably_not/
+-- https://www.reddit.com/r/neovim/comments/1pd6pg8/comment/ns4yopi/?context=3
+-- https://www.reddit.com/r/neovim/comments/1oq0x3o/comment/nnnuvsz/?context=3
+-- https://www.reddit.com/r/neovim/comments/1mxeghf/using_as_a_multipurpose_search_tool/
+
+-- plugins to consider:
+-- https://github.com/folke/snacks.nvim/blob/main/docs/gh.md
+-- https://github.com/letieu/jira.nvim
+-- https://github.com/Swaggermuffin64/VIM_GYM ?
+-- https://github.com/nemanjamalesija/smart-paste.nvim
+-----------
+
 -- Base url for github isn't abstracted away to allow 'gx'
 -- e.g., local url_github = ...
 vim.pack.add {
@@ -47,23 +67,31 @@ vim.pack.add {
   'https://github.com/NeogitOrg/neogit', -- Git interface
   'https://github.com/sindrets/diffview.nvim', -- Git diff viewer
   'https://github.com/L3MON4D3/LuaSnip', -- Snippet engine
-  'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol
-  'https://github.com/Saghen/blink.cmp', -- Fuzzy completion source
+  'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol. TODO: remove?
+  'https://github.com/Saghen/blink.cmp', -- Fuzzy completion source, TODO: replace with https://github.com/hrsh7th/nvim-cmp or vim.ui.select?
   'https://github.com/folke/which-key.nvim', -- Keybinding helper
   'https://github.com/github/copilot.vim', -- GitHub Copilot
   'https://github.com/CopilotC-Nvim/CopilotChat.nvim', -- AI chat assistant
-  'https://github.com/rose-pine/neovim', -- Color scheme
   'https://github.com/MeanderingProgrammer/render-markdown.nvim', -- Markdown renderer
   'https://github.com/windwp/nvim-autopairs', -- Create pairs like (), {}, []
   'https://github.com/windwp/nvim-ts-autotag', -- Auto close and rename html tags
   'https://github.com/nvim-treesitter/nvim-treesitter', -- Treesitter configurations
   'https://github.com/catgoose/nvim-colorizer.lua', -- Color highlighter
   'https://github.com/christoomey/vim-tmux-navigator', -- Tmux navigation
+
+  -- Color scheme
+  'https://github.com/vague-theme/vague.nvim',
+  'https://github.com/rose-pine/neovim',
+  'https://github.com/rebelot/kanagawa.nvim',
+
+  -- testing and debugging
   'https://github.com/mfussenegger/nvim-dap', -- Debug Adapter Protocol client
   'https://github.com/igorlfs/nvim-dap-view', -- Minimal DAP UI
   'https://github.com/leoluz/nvim-dap-go', -- Go adapter
+  'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
 
   -- not important but can be nice to have
+  'https://github.com/mbbill/undotree', -- Visualize undo history
   'https://github.com/artemave/workspace-diagnostics.nvim', -- Loads diagnostics for all files in workspace
   'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
   'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
@@ -131,13 +159,14 @@ require('mason-tool-installer').setup {
     'json-lsp', -- jsonls
     -- 'gopls',
     'stylua',
+    'css-lsp', -- cssls
     'prettierd',
     'prettier',
     'google-java-format',
   },
 }
 -- Uses Lspconfig names for servers
-vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls' }
+vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls', 'cssls' }
 
 -- Replace ts_ls
 require('typescript-tools').setup {}
@@ -175,6 +204,10 @@ end
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
+
+-- mbbill/undotree
+nmap('<leader>ut', '<cmd>UndotreeToggle<cr>', { desc = '[U]ndotree [T]oggle' })
+nmap('<leader>uf', '<cmd>UndotreeFocus<cr>', { desc = '[U]ndotree [F]ocus' })
 
 require('key-analyzer').setup()
 nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
@@ -284,6 +317,7 @@ require('conform').setup {
     svelte = { 'prettier' },
     yaml = { 'prettierd' },
     java = { 'google-java-format' },
+    zsh = { 'shfmt' },
   },
 }
 local neogit = require 'neogit'
@@ -295,14 +329,21 @@ neogit.setup {
   },
 }
 require('rose-pine').setup {
-  -- https://github.com/rose-pine/neovim
   styles = {
     transparency = true,
     bold = true,
     italic = false,
   },
 }
-vim.cmd.colorscheme 'rose-pine'
+require('vague').setup {
+  transparent = true,
+}
+require('kanagawa').setup {
+  transparent = true,
+}
+
+local theme = os.getenv 'NVIM_THEME' or 'kanagawa'
+vim.cmd.colorscheme(theme)
 vim.cmd ':hi statusline guibg=NONE'
 
 require('which-key').setup {
@@ -316,6 +357,7 @@ require('which-key').setup {
     { '<leader>p', group = '[P]ick' },
     { '<leader>o', group = '[O]pen' },
     { '<leader>d', group = '[D]ebug' },
+    { '<leader>d', group = '[D]iffView' },
     { '<leader>l', group = '[L]ist' },
     { '<leader>t', group = '[T]oggle' },
     { '<leader>c', group = '[C]opilot' },
@@ -446,6 +488,20 @@ nmap('<leader>qa', '<cmd>qa<cr>', { desc = '[Q]uit [A]ll' })
 nmap('<leader>qt', '<cmd>tabc<cr>', { desc = '[Q]uit [T]ab' })
 nmap('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
 nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
+
+-- Diff against all changes since previous commit
+local dv = require 'diffview'
+nmap('<leader>DC', function()
+  dv.open { 'HEAD~1' }
+end, { desc = '[D]iff against previous [C]ommit' })
+
+-- Show all uncommitted changes
+nmap('<leader>Dc', function()
+  dv.open { 'HEAD', '--cache' }
+end, { desc = '[D]iff against uncommitted [c]hanges' })
+
+-- Close diffview
+nmap('<leader>De', '<cmd>DiffviewClose<cr>', { desc = '[D]iff against uncommitted [c]hanges' })
 
 -- [O]pen
 nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })

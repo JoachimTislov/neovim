@@ -28,6 +28,10 @@
       "rev": "64463022a1f2ff1318ab22a2ea4125ed9313a483",
       "src": "https://github.com/j-hui/fidget.nvim"
     },
+    "flutter-tools.nvim": {
+      "rev": "677cc07c16e8b89999108d2ebeefcfc5f539b73c",
+      "src": "https://github.com/nvim-flutter/flutter-tools.nvim"
+    },
     "gitsigns.nvim": {
       "rev": "5813e4878748805f1518cee7abb50fd7205a3a48",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
@@ -35,6 +39,10 @@
     "guess-indent.nvim": {
       "rev": "84a4987ff36798c2fc1169cbaff67960aed9776f",
       "src": "https://github.com/NMAC427/guess-indent.nvim"
+    },
+    "kanagawa.nvim": {
+      "rev": "aef7f5cec0a40dbe7f3304214850c472e2264b10",
+      "src": "https://github.com/rebelot/kanagawa.nvim"
     },
     "key-analyzer.nvim": {
       "rev": "4e4bef34498e821bcbd5203f44db8b67e4f10e04",
@@ -67,6 +75,10 @@
     "neogit": {
       "rev": "300949af63fa48cb6bc8d93822b78cb9dbb4fd75",
       "src": "https://github.com/NeogitOrg/neogit"
+    },
+    "neotest": {
+      "rev": "b059824dc3c9422ccf6cfdbd7349df9f65389d39",
+      "src": "https://github.com/nvim-neotest/neotest"
     },
     "neovim": {
       "rev": "cf2a288696b03d0934da713d66c6d71557b5c997",
@@ -127,6 +139,14 @@
     "typescript-tools.nvim": {
       "rev": "c2f5910074103705661e9651aa841e0d7eea9932",
       "src": "https://github.com/pmizio/typescript-tools.nvim"
+    },
+    "undotree": {
+      "rev": "6fa6b57cda8459e1e4b2ca34df702f55242f4e4d",
+      "src": "https://github.com/mbbill/undotree"
+    },
+    "vague.nvim": {
+      "rev": "8c4643f8a5106dbc492918f86ff6b5c81111ce9a",
+      "src": "https://github.com/vague-theme/vague.nvim"
     },
     "vim-tmux-navigator": {
       "rev": "c45243dc1f32ac6bcf6068e5300f3b2b237e576a",
