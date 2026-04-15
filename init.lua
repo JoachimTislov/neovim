@@ -31,6 +31,7 @@ vim.o.lhistory = 100
 -- Use vim.ui.select?
 -- Center buffer view ?
 -- Consider adding something like ThePrimeagen's 99 or otaleghani/dwight.nvim
+-- https://github.com/greggh/claude-code.nvim
 -- Replace or add telescope in addition to mini.pick
 -- fix typescript ts_ls and svelte ls. Not showing refs in svelte files from ts files
 --  - https://github.com/neovim/nvim-lspconfig/issues/725
@@ -41,10 +42,13 @@ vim.o.lhistory = 100
 -- https://www.reddit.com/r/neovim/comments/1mxeghf/using_as_a_multipurpose_search_tool/
 
 -- plugins to consider:
+-- https://github.com/stevearc/profile.nvim
 -- https://github.com/folke/snacks.nvim/blob/main/docs/gh.md
 -- https://github.com/letieu/jira.nvim
--- https://github.com/Swaggermuffin64/VIM_GYM ?
 -- https://github.com/nemanjamalesija/smart-paste.nvim
+-- https://github.com/enochchau/nvim-pretty-ts-errors
+-- https://github.com/Caronte995/spotify-player.nvim
+-- https://github.com/sahilsehwag/macrobank.nvim
 -----------
 
 -- Base url for github isn't abstracted away to allow 'gx'
@@ -67,7 +71,7 @@ vim.pack.add {
   'https://github.com/NeogitOrg/neogit', -- Git interface
   'https://github.com/sindrets/diffview.nvim', -- Git diff viewer
   'https://github.com/L3MON4D3/LuaSnip', -- Snippet engine
-  'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol. TODO: remove?
+  -- 'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol. TODO: remove?
   'https://github.com/Saghen/blink.cmp', -- Fuzzy completion source, TODO: replace with https://github.com/hrsh7th/nvim-cmp or vim.ui.select?
   'https://github.com/folke/which-key.nvim', -- Keybinding helper
   'https://github.com/github/copilot.vim', -- GitHub Copilot
@@ -96,6 +100,12 @@ vim.pack.add {
   'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
   'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
 }
+
+if os.getenv 'NVIM_FLUTTER' then
+  vim.pack.add 'https://github.com/akinsho/flutter-tools.nvim'
+  require('flutter-tools').setup {}
+end
+
 require('blink.cmp').setup {
   fuzzy = { implementation = 'lua' },
 }
@@ -119,7 +129,7 @@ require('colorizer').setup {
 --   require('workspace-diagnostics').populate_workspace_diagnostics(client, bufnr)
 -- end
 require('nvim-treesitter.configs').setup {
-  ensure_installed = { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java' },
+  ensure_installed = { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java', 'kotlin' },
   auto_install = true,
   highlight = {
     enable = true,
@@ -157,7 +167,7 @@ require('mason-tool-installer').setup {
     -- 'typescript-language-server', -- ts_ls
     'eslint-lsp', -- eslint
     'json-lsp', -- jsonls
-    -- 'gopls',
+    'gopls',
     'stylua',
     'css-lsp', -- cssls
     'prettierd',
@@ -166,7 +176,7 @@ require('mason-tool-installer').setup {
   },
 }
 -- Uses Lspconfig names for servers
-vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls', 'cssls' }
+vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
 
 -- Replace ts_ls
 require('typescript-tools').setup {}
@@ -200,6 +210,26 @@ local function autocmd(event, opts)
   vim.api.nvim_create_autocmd(event, opts)
 end
 
+-- TODO: Implement simple management of available known plugins
+-- vim.pack bindings
+-- local p = vim.pack.get()
+-- { 'nvim-treesitter' }
+-- for i = 1, #p do
+--   for key, val in pairs(p[i]) do
+--     print(key, val)
+--   end
+-- end
+
+nmap('<leader>nA', function()
+  vim.pack.add()
+end, { desc = '[N]eovim [A]dd plugins' })
+nmap('<leader>nU', function()
+  vim.pack.update()
+end, { desc = '[N]eovim [U]pdate plugins' })
+nmap('<leader>nD', function()
+  vim.pack.delete { force = true }
+end, { desc = '[N]eovim [U]pdate plugins' })
+
 -- Sync with system clipboard
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
@@ -216,6 +246,13 @@ local pick = require 'mini.pick'
 pick.setup {
   mappings = {
     toggle_preview = '<C-Space>',
+    choose_all = {
+      char = '<C-q>',
+      func = function()
+        local mappings = pick.get_picker_opts().mappings
+        vim.api.nvim_input(mappings.mark_all .. mappings.choose_marked)
+      end,
+    },
   },
 }
 
@@ -279,6 +316,47 @@ nmap('<leader>pd', function()
   }
 end, { desc = '[P]ick [D]iagnostics' })
 
+nmap('<leader>pt', function()
+  -- TODO: Prevent reading too many files... maybe restrict usage to certain directories
+  -- probably best to read path and ensure either parent dir or child dir is named something like 'src', 'project', 'workspace', etc. to prevent accidentally reading entire home directory
+
+  local keywords = { 'TODO', 'FIXME', 'HACK', 'NOTE' }
+  local pattern = table.concat(keywords, '|')
+  local cmd = { 'rg', '--vimgrep', '--no-heading', '-e', pattern }
+
+  local output = vim.fn.systemlist(cmd)
+  if vim.v.shell_error ~= 0 or #output == 0 then
+    vim.notify('No TODOs found', vim.log.levels.INFO)
+    return
+  end
+
+  local items = {}
+  for _, line in ipairs(output) do
+    local file, lnum, col, text = line:match '^(.+):(%d+):(%d+):(.*)$'
+    if file then
+      table.insert(items, {
+        text = string.format('%s:%s:%s %s', file, lnum, col, vim.trim(text)),
+        path = file,
+        lnum = tonumber(lnum),
+        col = tonumber(col),
+      })
+    end
+  end
+
+  pick.start {
+    source = {
+      items = items,
+      name = 'TODOs',
+      choose = function(item)
+        vim.schedule(function()
+          vim.cmd('edit ' .. vim.fn.fnameescape(item.path))
+          vim.api.nvim_win_set_cursor(0, { item.lnum, item.col - 1 })
+        end)
+      end,
+    },
+  }
+end, { desc = '[P]ick [T]ODOs' })
+
 require('oil').setup {
   columns = {
     'icon',
@@ -318,6 +396,7 @@ require('conform').setup {
     yaml = { 'prettierd' },
     java = { 'google-java-format' },
     zsh = { 'shfmt' },
+    kt = { 'ktfmt' },
   },
 }
 local neogit = require 'neogit'
@@ -342,7 +421,7 @@ require('kanagawa').setup {
   transparent = true,
 }
 
-local theme = os.getenv 'NVIM_THEME' or 'kanagawa'
+local theme = os.getenv 'NVIM_THEME' or 'vague'
 vim.cmd.colorscheme(theme)
 vim.cmd ':hi statusline guibg=NONE'
 
@@ -362,7 +441,7 @@ require('which-key').setup {
     { '<leader>t', group = '[T]oggle' },
     { '<leader>c', group = '[C]opilot' },
     { '<leader>g', group = '[G]it Hunk', mode = { 'n', 'v' } },
-    { '<leader>gr', group = 'Lsp requests' },
+    { 'gr', group = 'Lsp requests' },
   },
 }
 
@@ -372,7 +451,9 @@ require('CopilotChat').setup {
   sticky = {
     '#buffers',
     "Don't bullshit me. Be concise and DO NOT repeat existing code.",
-    '@copilot',
+    -- '@copilot', I don't like how it asks for permission
+    -- TODO: read docs for above or install a plugin wrapping the copilotCLI
+    -- maybe install: https://github.com/carlos-algms/agentic.nvim
   },
   highlight_headers = false,
   auto_fold = true,
@@ -546,6 +627,7 @@ end, { desc = '[P]ick [C]ommand' })
 
 -- Actions
 vmap('<BS>', 'y/<c-r>"<cr>', { desc = 'Search with selected text' })
+-- vmap('<CR>', 'y:<c-r>"<cr>')
 nmap('<BS>', '/', { desc = 'Search' })
 nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
 nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
