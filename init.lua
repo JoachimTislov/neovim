@@ -26,10 +26,13 @@ vim.o.updatetime = 250
 -- vim.opt.autochdir = true
 vim.o.chistory = 100
 vim.o.lhistory = 100
+vim.o.termguicolors = true
 
 -- TODOs --
+-- Doom emacs? https://github.com/doomemacs/doomemacs
 -- Use vim.ui.select?
 -- Center buffer view ?
+-- Utilize terminal buffers more, e.g., for git or lsp output
 -- Consider adding something like ThePrimeagen's 99 or otaleghani/dwight.nvim
 -- https://github.com/greggh/claude-code.nvim
 -- Replace or add telescope in addition to mini.pick
@@ -40,8 +43,15 @@ vim.o.lhistory = 100
 -- https://www.reddit.com/r/neovim/comments/1pd6pg8/comment/ns4yopi/?context=3
 -- https://www.reddit.com/r/neovim/comments/1oq0x3o/comment/nnnuvsz/?context=3
 -- https://www.reddit.com/r/neovim/comments/1mxeghf/using_as_a_multipurpose_search_tool/
+-- Look into https://github.com/Lanjelin/nvim-docker/blob/main/Dockerfile
 
 -- plugins to consider:
+-- https://github.com/doom-neovim/doom-nvim
+-- db integration:
+-- - https://github.com/zongben/dbout.nvim
+-- - https://github.com/tpope/vim-dadbod
+-- https://github.com/glacambre/firenvim
+-- https://github.com/mistweaverco/kulala.nvim
 -- https://github.com/stevearc/profile.nvim
 -- https://github.com/folke/snacks.nvim/blob/main/docs/gh.md
 -- https://github.com/letieu/jira.nvim
@@ -86,7 +96,6 @@ vim.pack.add {
   -- Color scheme
   'https://github.com/vague-theme/vague.nvim',
   'https://github.com/rose-pine/neovim',
-  'https://github.com/rebelot/kanagawa.nvim',
 
   -- testing and debugging
   'https://github.com/mfussenegger/nvim-dap', -- Debug Adapter Protocol client
@@ -128,17 +137,7 @@ require('colorizer').setup {
 -- vim.lsp.config.ts_ls.on_attach = function(client, bufnr)
 --   require('workspace-diagnostics').populate_workspace_diagnostics(client, bufnr)
 -- end
-require('nvim-treesitter.configs').setup {
-  ensure_installed = { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java', 'kotlin' },
-  auto_install = true,
-  highlight = {
-    enable = true,
-  },
-  indent = {
-    enable = true,
-  },
-}
-require('nvim-treesitter').setup()
+require('nvim-treesitter').install { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java', 'kotlin' }
 require('nvim-autopairs').setup()
 require('nvim-ts-autotag').setup()
 require('rose-pine').setup {
@@ -206,9 +205,15 @@ local function imap(...)
   k('i', ...)
 end
 
+local function tmap(...)
+  k('t', ...)
+end
+
 local function autocmd(event, opts)
   vim.api.nvim_create_autocmd(event, opts)
 end
+
+tmap('<C-BS>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TODO: Implement simple management of available known plugins
 -- vim.pack bindings
@@ -417,9 +422,6 @@ require('rose-pine').setup {
 require('vague').setup {
   transparent = true,
 }
-require('kanagawa').setup {
-  transparent = true,
-}
 
 local theme = os.getenv 'NVIM_THEME' or 'vague'
 vim.cmd.colorscheme(theme)
@@ -585,7 +587,8 @@ end, { desc = '[D]iff against uncommitted [c]hanges' })
 nmap('<leader>De', '<cmd>DiffviewClose<cr>', { desc = '[D]iff against uncommitted [c]hanges' })
 
 -- [O]pen
-nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
+nmap('<leader>ot', '<cmd>terminal<cr>', { desc = '[O]pen [T]erminal' })
+-- nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
 nmap('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
 nmap('<leader>oM', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
 nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
@@ -952,6 +955,6 @@ autocmd({ 'WinEnter', 'BufEnter' }, {
 autocmd({ 'WinLeave', 'BufLeave' }, {
   group = vim.api.nvim_create_augroup('inactive-cursorline', { clear = true }),
   callback = function()
-    vim.opt_local.cursorline = false
+    -- vim.opt_local.cursorline = false
   end,
 })
