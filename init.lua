@@ -91,7 +91,6 @@ vim.pack.add {
   'https://github.com/windwp/nvim-ts-autotag', -- Auto close and rename html tags
   'https://github.com/nvim-treesitter/nvim-treesitter', -- Treesitter configurations
   'https://github.com/catgoose/nvim-colorizer.lua', -- Color highlighter
-  'https://github.com/christoomey/vim-tmux-navigator', -- Tmux navigation
 
   -- Color scheme
   'https://github.com/vague-theme/vague.nvim',
@@ -103,8 +102,11 @@ vim.pack.add {
   'https://github.com/leoluz/nvim-dap-go', -- Go adapter
   'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
 
+  'https://github.com/nvim-neotest/nvim-nio', -- Async IO
+  'https://github.com/marilari88/neotest-vitest', -- Neotest adapter for Vitest
+  'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
+
   -- not important but can be nice to have
-  'https://github.com/mbbill/undotree', -- Visualize undo history
   'https://github.com/artemave/workspace-diagnostics.nvim', -- Loads diagnostics for all files in workspace
   'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
   'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
@@ -113,6 +115,10 @@ vim.pack.add {
 if os.getenv 'NVIM_FLUTTER' then
   vim.pack.add 'https://github.com/akinsho/flutter-tools.nvim'
   require('flutter-tools').setup {}
+end
+
+if not vim.fn.has 'win32' == 1 then
+  vim.pack.add 'https://github.com/christoomey/vim-tmux-navigator' -- Tmux navigation
 end
 
 require('blink.cmp').setup {
@@ -137,6 +143,7 @@ require('colorizer').setup {
 -- vim.lsp.config.ts_ls.on_attach = function(client, bufnr)
 --   require('workspace-diagnostics').populate_workspace_diagnostics(client, bufnr)
 -- end
+require('nvim-treesitter.install').compilers = { 'gcc' }
 require('nvim-treesitter').install { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java', 'kotlin' }
 require('nvim-autopairs').setup()
 require('nvim-ts-autotag').setup()
@@ -233,16 +240,36 @@ nmap('<leader>nU', function()
 end, { desc = '[N]eovim [U]pdate plugins' })
 nmap('<leader>nD', function()
   vim.pack.delete { force = true }
-end, { desc = '[N]eovim [U]pdate plugins' })
+end, { desc = '[N]eovim [D]elete plugins' })
 
 -- Sync with system clipboard
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
--- mbbill/undotree
-nmap('<leader>ut', '<cmd>UndotreeToggle<cr>', { desc = '[U]ndotree [T]oggle' })
-nmap('<leader>uf', '<cmd>UndotreeFocus<cr>', { desc = '[U]ndotree [F]ocus' })
+require('neotest').setup {
+  adapters = {
+    require 'neotest-vitest',
+  },
+}
+
+local neotest_run = require('neotest').run
+local function testRunAttach(location)
+  neotest_run.run(location)
+  neotest_run.attach()
+  vim.cmd 'normal! G'
+end
+
+nmap('<leader>tr', testRunAttach, { desc = '[T]est [R]un nearest' })
+nmap('<leader>tf', function()
+  testRunAttach(vim.fn.expand '%')
+end, { desc = '[T]est run [F]ile' })
+nmap('<leader>ts', function()
+  neotest_run.stop()
+end, { desc = '[T]est [S]top' })
+nmap('<leader>td', function()
+  neotest_run.run { strategy = 'dap' }
+end, { desc = '[T]est [D]ebug nearest' })
 
 require('key-analyzer').setup()
 nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
@@ -250,7 +277,7 @@ nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
 local pick = require 'mini.pick'
 pick.setup {
   mappings = {
-    toggle_preview = '<C-Space>',
+    -- toggle_preview = '<C-Space>', TODO: rebind
     choose_all = {
       char = '<C-q>',
       func = function()
@@ -388,7 +415,7 @@ require('oil').setup {
 }
 require('conform').setup {
   format_on_save = {
-    timeout_ms = 500,
+    timeout_ms = 1000,
     lsp_format = 'fallback', -- "first", "last", "fallback", "prefer", "never"
   },
   notify_on_error = true,
@@ -421,6 +448,7 @@ require('rose-pine').setup {
 }
 require('vague').setup {
   transparent = true,
+  italic = false,
 }
 
 local theme = os.getenv 'NVIM_THEME' or 'vague'
@@ -440,7 +468,7 @@ require('which-key').setup {
     { '<leader>d', group = '[D]ebug' },
     { '<leader>d', group = '[D]iffView' },
     { '<leader>l', group = '[L]ist' },
-    { '<leader>t', group = '[T]oggle' },
+    { '<leader>t', group = '[T]est' },
     { '<leader>c', group = '[C]opilot' },
     { '<leader>g', group = '[G]it Hunk', mode = { 'n', 'v' } },
     { 'gr', group = 'Lsp requests' },
@@ -608,7 +636,7 @@ end, { desc = '[O]pen [H]elp for selected/current word' })
 
 -- [C]opilot
 local copilot_chat = require 'CopilotChat'
-nmap('<leader>cp', copilot_chat.select_prompt, { desc = 'View/select [p]rompt templates' })
+nmap('<leader>cp', copilot_chat.select_prompt, { desc = 'View/select [P]rompt templates' })
 nvmap('<leader>ct', copilot_chat.toggle, { desc = '[T]oggle chat window' })
 nmap('<leader>cs', copilot_chat.stop, { desc = '[S]top current output' })
 nmap('<leader>cr', copilot_chat.reset, { desc = '[R]eset chat' })
@@ -632,6 +660,7 @@ end, { desc = '[P]ick [C]ommand' })
 vmap('<BS>', 'y/<c-r>"<cr>', { desc = 'Search with selected text' })
 -- vmap('<CR>', 'y:<c-r>"<cr>')
 nmap('<BS>', '/', { desc = 'Search' })
+nmap('<Enter>', ':', { desc = 'Search' })
 nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
 nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
 nmap('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
@@ -649,12 +678,6 @@ nvmap('<C-j>', '<C-W>j')
 nvmap('<C-k>', '<C-W>k')
 nvmap('<C-l>', '<C-W>l')
 nvmap('<C-h>', '<C-W>h')
-
--- If tmux is running, use the following mappings to navigate between tmux panes and nvim splits seamlessly
-nvmap('<C-h>', '<cmd>TmuxNavigateLeft<cr>')
-nvmap('<C-l>', '<cmd>TmuxNavigateRight<cr>')
-nvmap('<C-j>', '<cmd>TmuxNavigateDown<cr>')
-nvmap('<C-k>', '<cmd>TmuxNavigateUp<cr>')
 
 -- Center editor view with zz
 nvmap('<C-d>', '<C-d>zz')
@@ -790,6 +813,16 @@ if vim.fn.executable(clip) == 1 then
       end
     end,
   })
+end
+
+if vim.fn.has 'win32' == 1 then
+  nmap('<leader>oc', '<cmd>e $DOTFILES<cr>', { desc = '[O]pen [C]onfig' })
+else
+  -- If tmux is running, use the following mappings to navigate between tmux panes and nvim splits seamlessly
+  nvmap('<C-h>', '<cmd>TmuxNavigateLeft<cr>')
+  nvmap('<C-l>', '<cmd>TmuxNavigateRight<cr>')
+  nvmap('<C-j>', '<cmd>TmuxNavigateDown<cr>')
+  nvmap('<C-k>', '<cmd>TmuxNavigateUp<cr>')
 end
 
 vim.diagnostic.config {
