@@ -82,7 +82,12 @@ vim.pack.add {
   'https://github.com/sindrets/diffview.nvim', -- Git diff viewer
   'https://github.com/L3MON4D3/LuaSnip', -- Snippet engine
   -- 'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol. TODO: remove?
-  'https://github.com/Saghen/blink.cmp', -- Fuzzy completion source, TODO: replace with https://github.com/hrsh7th/nvim-cmp or vim.ui.select?
+
+  -- Fuzzy completion source
+  -- TODO: replace with https://github.com/hrsh7th/nvim-cmp or vim.ui.select?
+  'https://github.com/Saghen/blink.cmp',
+  'https://github.com/saghen/blink.lib',
+
   'https://github.com/folke/which-key.nvim', -- Keybinding helper
   'https://github.com/github/copilot.vim', -- GitHub Copilot
   'https://github.com/CopilotC-Nvim/CopilotChat.nvim', -- AI chat assistant
@@ -113,12 +118,16 @@ vim.pack.add {
 }
 
 if os.getenv 'NVIM_FLUTTER' then
-  vim.pack.add 'https://github.com/akinsho/flutter-tools.nvim'
+  vim.pack.add { 'https://github.com/akinsho/flutter-tools.nvim' }
   require('flutter-tools').setup {}
 end
 
-if not vim.fn.has 'win32' == 1 then
-  vim.pack.add 'https://github.com/christoomey/vim-tmux-navigator' -- Tmux navigation
+local function its_linux()
+  return vim.uv.os_uname().sysname == 'Linux'
+end
+
+if its_linux() then
+  vim.pack.add { 'https://github.com/christoomey/vim-tmux-navigator' } -- Tmux navigation
 end
 
 require('blink.cmp').setup {
@@ -143,8 +152,29 @@ require('colorizer').setup {
 -- vim.lsp.config.ts_ls.on_attach = function(client, bufnr)
 --   require('workspace-diagnostics').populate_workspace_diagnostics(client, bufnr)
 -- end
-require('nvim-treesitter.install').compilers = { 'gcc' }
-require('nvim-treesitter').install { 'markdown', 'lua', 'svelte', 'scss', 'css', 'html', 'typescript', 'java', 'kotlin' }
+
+require('nvim-treesitter').install {
+  'json',
+  'markdown',
+  'lua',
+  'svelte',
+  'scss',
+  'css',
+  'html',
+  'typescript',
+  'java',
+  'kotlin',
+}
+
+vim.api.nvim_create_autocmd('FileType', {
+  callback = function(event)
+    if event.match == 'svelte' then
+      vim.treesitter.start(vim.api.nvim_get_current_buf())
+    end
+  end,
+  desc = 'Temp work around to enable svelte treesitter',
+})
+
 require('nvim-autopairs').setup()
 require('nvim-ts-autotag').setup()
 require('rose-pine').setup {
@@ -181,7 +211,20 @@ require('mason-tool-installer').setup {
     'google-java-format',
   },
 }
--- Uses Lspconfig names for servers
+
+vim.lsp.config('lua_ls', {
+  -- cmd = { vim.fn.stdpath 'data' .. '/mason/bin/lua-language-server' },
+  settings = {
+    Lua = {
+      runtime = { version = 'LuaJIT' },
+      workspace = {
+        checkThirdParty = false,
+        library = { vim.env.VIMRUNTIME },
+      },
+    },
+  },
+})
+
 vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
 
 -- Replace ts_ls
@@ -232,15 +275,9 @@ tmap('<C-BS>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 --   end
 -- end
 
-nmap('<leader>nA', function()
-  vim.pack.add()
-end, { desc = '[N]eovim [A]dd plugins' })
 nmap('<leader>nU', function()
   vim.pack.update()
 end, { desc = '[N]eovim [U]pdate plugins' })
-nmap('<leader>nD', function()
-  vim.pack.delete { force = true }
-end, { desc = '[N]eovim [D]elete plugins' })
 
 -- Sync with system clipboard
 vim.schedule(function()
@@ -479,7 +516,7 @@ require('CopilotChat').setup {
   model = 'claude-opus-4.6',
   temperature = 0, -- Lower = focused, higher = creative
   sticky = {
-    '#buffers',
+    '#buffer',
     "Don't bullshit me. Be concise and DO NOT repeat existing code.",
     -- '@copilot', I don't like how it asks for permission
     -- TODO: read docs for above or install a plugin wrapping the copilotCLI
@@ -616,6 +653,7 @@ nmap('<leader>De', '<cmd>DiffviewClose<cr>', { desc = '[D]iff against uncommitte
 
 -- [O]pen
 nmap('<leader>ot', '<cmd>terminal<cr>', { desc = '[O]pen [T]erminal' })
+nmap('<leader>oT', '<cmd>InspectTree<cr>', { desc = '[O]pen [T]erminal' })
 -- nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
 nmap('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
 nmap('<leader>oM', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
@@ -817,7 +855,9 @@ end
 
 if vim.fn.has 'win32' == 1 then
   nmap('<leader>oc', '<cmd>e $DOTFILES<cr>', { desc = '[O]pen [C]onfig' })
-else
+end
+
+if its_linux() then
   -- If tmux is running, use the following mappings to navigate between tmux panes and nvim splits seamlessly
   nvmap('<C-h>', '<cmd>TmuxNavigateLeft<cr>')
   nvmap('<C-l>', '<cmd>TmuxNavigateRight<cr>')
