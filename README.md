@@ -1,6 +1,6 @@
 # Neovim 12+ configuration
 
-Compatible with Neovim 0.12 and above. Works on hopyefully all OSes that Neovim supports.
+Compatible with Neovim 0.12 and above. Works on hopefully all OS-es that Neovim supports.
 
 ## TODOs
 
@@ -11,12 +11,11 @@ Compatible with Neovim 0.12 and above. Works on hopyefully all OSes that Neovim 
 - consider replacing conform with custom setup (linting, formatting, etc)
 - replace blink.cmp with https://github.com/hrsh7th/nvim-cmp?
 - look into https://github.com/mbbill/undotree?tab=readme-ov-file
-- consider https://github.com/nvim-pack/nvim-spectre
 
 ## Windows specific features
 
-- Syncs wsl clipboard with system clipboard
-    - but not powertoys clipboard manager
+- [x] Syncs wsl clipboard with system clipboard
+    - [ ] but not powertoys clipboard manager
 
 ### TODO
 

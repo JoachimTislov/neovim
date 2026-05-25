@@ -46,6 +46,7 @@ vim.o.termguicolors = true
 -- Look into https://github.com/Lanjelin/nvim-docker/blob/main/Dockerfile
 
 -- plugins to consider:
+-- https://github.com/nvim-pack/nvim-spectre
 -- https://github.com/doom-neovim/doom-nvim
 -- db integration:
 -- - https://github.com/zongben/dbout.nvim
@@ -74,7 +75,6 @@ vim.pack.add {
   'https://github.com/nvim-mini/mini.pick', -- Fuzzy picker
   'https://github.com/nvim-mini/mini.surround', -- Surround
   'https://github.com/neovim/nvim-lspconfig', -- LSP configurations
-  'https://github.com/pmizio/typescript-tools.nvim', -- Replacement for ts_ls
   'https://github.com/williamboman/mason.nvim', -- Installer UI
   'https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim', -- Auto install packages
   'https://github.com/lewis6991/gitsigns.nvim', -- Git signs in signcolumn
@@ -116,6 +116,7 @@ vim.pack.add {
   'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
   'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
 }
+vim.pack.del { 'typescript-tools.nvim' }
 
 if os.getenv 'NVIM_FLUTTER' then
   vim.pack.add { 'https://github.com/akinsho/flutter-tools.nvim' }
@@ -200,6 +201,7 @@ require('mason-tool-installer').setup {
   ensure_installed = {
     'lua-language-server', -- lua_ls
     'svelte-language-server', -- svelte
+    'vtsls',
     -- 'typescript-language-server', -- ts_ls
     'eslint-lsp', -- eslint
     'json-lsp', -- jsonls
@@ -225,10 +227,36 @@ vim.lsp.config('lua_ls', {
   },
 })
 
-vim.lsp.enable { 'lua_ls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
+vim.lsp.config('vtsls', {
+  settings = {
+    vtsls = {
+      settings = {
+        typescript = {
+          updateImportsOnFileMove = {
+            enabled = 'always',
+          },
+        },
+        javascript = {
+          updateImportsOnFileMove = {
+            enabled = 'always',
+          },
+        },
+      },
+      tsserver = {
+        globalPlugins = {
+          {
+            name = 'typescript-svelte-plugin',
+            location = vim.fn.expand '$MASON/packages/svelte-language-server/node_modules/typescript-svelte-plugin',
+            enableForWorkspaceTypeScriptVersions = true,
+          },
+        },
+      },
+    },
+  },
+  filetypes = { 'javascript', 'typescript', 'svelte' },
+})
 
--- Replace ts_ls
-require('typescript-tools').setup {}
+vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
 
 -- Keymaps --
 local function k(mode, key, func, opts)
@@ -666,6 +694,7 @@ nmap('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uickfix list' })
 nvmap('<leader>oh', function()
   local word = vim.fn.expand '<cword>'
   print('checking help for ' .. word)
+  ---@diagnostic disable-next-line: param-type-mismatch ---supports string, but type is set to table
   local ok = pcall(vim.cmd, 'help ' .. word)
   if not ok then
     vim.notify('No manual entry for ' .. word, vim.log.levels.WARN)
@@ -698,7 +727,7 @@ end, { desc = '[P]ick [C]ommand' })
 vmap('<BS>', 'y/<c-r>"<cr>', { desc = 'Search with selected text' })
 -- vmap('<CR>', 'y:<c-r>"<cr>')
 nmap('<BS>', '/', { desc = 'Search' })
-nmap('<Enter>', ':', { desc = 'Search' })
+-- nmap('<Enter>', ':', { desc = 'Search' }) INFO: crashes with Quickfix list
 nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
 nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
 nmap('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
@@ -724,10 +753,14 @@ nvmap('<C-f>', '<C-f>zz')
 nvmap('<C-b>', '<C-b>zz')
 
 -- Quickfix list navigation
-nvmap('<M-j>', '<cmd>cnext<cr>')
-nvmap('<M-k>', '<cmd>cprev<cr>')
-nvmap('<M-h>', '<cmd>cfirst<cr>')
-nvmap('<M-l>', '<cmd>clast<cr>')
+-- Only works for systems respecting alt key
+-- Alt is encoded to Esc on Windows, use ]/[ and q/Q instead to maneuver the qf list
+if its_linux() then
+  nvmap('<M-j>', '<cmd>cnext<cr>')
+  nvmap('<M-k>', '<cmd>cprev<cr>')
+  nvmap('<M-h>', '<cmd>cfirst<cr>')
+  nvmap('<M-l>', '<cmd>clast<cr>')
+end
 
 --------------------------
 --- Lsp configurations ---
@@ -906,6 +939,7 @@ local snoremap = { noremap = true, silent = true }
 nvmap('<Space>', '<Nop>', snoremap)
 
 -- Disable deprecate messages
+---@diagnostic disable-next-line: duplicate-set-field
 vim.deprecate = function() end
 
 -- Omit chars consumed by the x and c operator
