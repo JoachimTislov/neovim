@@ -1,6 +1,5 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-vim.g.copilot_no_tab_map = true
 vim.g.have_nerd_font = true
 vim.o.wrap = true
 vim.o.winborder = 'rounded'
@@ -89,8 +88,6 @@ vim.pack.add {
   'https://github.com/saghen/blink.lib',
 
   'https://github.com/folke/which-key.nvim', -- Keybinding helper
-  'https://github.com/github/copilot.vim', -- GitHub Copilot
-  'https://github.com/CopilotC-Nvim/CopilotChat.nvim', -- AI chat assistant
   'https://github.com/MeanderingProgrammer/render-markdown.nvim', -- Markdown renderer
   'https://github.com/windwp/nvim-autopairs', -- Create pairs like (), {}, []
   'https://github.com/windwp/nvim-ts-autotag', -- Auto close and rename html tags
@@ -112,11 +109,13 @@ vim.pack.add {
   'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
 
   -- not important but can be nice to have
-  'https://github.com/artemave/workspace-diagnostics.nvim', -- Loads diagnostics for all files in workspace
-  'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
-  'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
+  -- 'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
+  -- 'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
 }
-vim.pack.del { 'typescript-tools.nvim' }
+
+-- require('guess-indent').setup {}
+-- require('key-analyzer').setup()
+-- nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
 
 if os.getenv 'NVIM_FLUTTER' then
   vim.pack.add { 'https://github.com/akinsho/flutter-tools.nvim' }
@@ -136,7 +135,6 @@ require('blink.cmp').setup {
 }
 require('mini.icons').setup()
 require('mini.surround').setup()
-require('guess-indent').setup {}
 require('colorizer').setup {
   user_default_options = {
     names = false,
@@ -335,9 +333,6 @@ end, { desc = '[T]est [S]top' })
 nmap('<leader>td', function()
   neotest_run.run { strategy = 'dap' }
 end, { desc = '[T]est [D]ebug nearest' })
-
-require('key-analyzer').setup()
-nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
 
 local pick = require 'mini.pick'
 pick.setup {
@@ -540,41 +535,6 @@ require('which-key').setup {
   },
 }
 
-require('CopilotChat').setup {
-  model = 'claude-opus-4.6',
-  temperature = 0, -- Lower = focused, higher = creative
-  sticky = {
-    '#buffer',
-    "Don't bullshit me. Be concise and DO NOT repeat existing code.",
-    -- '@copilot', I don't like how it asks for permission
-    -- TODO: read docs for above or install a plugin wrapping the copilotCLI
-    -- maybe install: https://github.com/carlos-algms/agentic.nvim
-  },
-  highlight_headers = false,
-  auto_fold = true,
-  auto_insert_mode = false,
-  mappings = {
-    reset = false,
-  },
-  headers = {
-    user = ' ',
-    assistant = ' ',
-    tool = '󰊳 ',
-  },
-  separator = '━━',
-  window = {
-    layout = 'horizontal', -- 'vertical', 'horizontal', 'float', 'replace'
-    -- width = 800, -- Fixed width in columns
-    -- height = 20, -- Fixed height in rows
-    -- zindex = 100, -- Ensure window stays on top
-    -- border = 'solid', -- 'single', 'double', 'rounded', 'solid'
-  },
-}
-
--- Remap <Tab> to <S-Tab> for copilot accept to avoid conflict with other plugins
-imap('<S-Tab>', 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
-imap('<C-A-j>', 'copilot#Next()', { expr = true, silent = true, script = true })
-
 --- LuaSnip keymaps ---
 
 local ls = require 'luasnip'
@@ -701,14 +661,6 @@ nvmap('<leader>oh', function()
   end
 end, { desc = '[O]pen [H]elp for selected/current word' })
 
--- [C]opilot
-local copilot_chat = require 'CopilotChat'
-nmap('<leader>cp', copilot_chat.select_prompt, { desc = 'View/select [P]rompt templates' })
-nvmap('<leader>ct', copilot_chat.toggle, { desc = '[T]oggle chat window' })
-nmap('<leader>cs', copilot_chat.stop, { desc = '[S]top current output' })
-nmap('<leader>cr', copilot_chat.reset, { desc = '[R]eset chat' })
-nmap('<leader>cm', copilot_chat.select_model, { desc = 'View/select available models' })
-
 -- Mini [P]ick
 nmap('<leader>pf', pick.builtin.files, { desc = '[P]ick [F]iles' })
 nmap('<leader>ph', pick.builtin.help, { desc = '[P]ick [H]elp' })
@@ -732,10 +684,6 @@ nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
 nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
 nmap('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
 nmap('<leader>s', ':source<cr>')
-
--- Copilot
-nmap('<leader>ce', '<cmd>Copilot enable<cr>', { desc = 'Enable' })
-nmap('<leader>cd', '<cmd>Copilot disable<cr>', { desc = 'Disable' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 nmap('<Esc>', '<cmd>nohlsearch<cr>')
@@ -915,15 +863,6 @@ vim.diagnostic.config {
     },
   } or {},
 }
-
-vim.api.nvim_create_autocmd('BufEnter', {
-  pattern = 'copilot-*',
-  callback = function()
-    vim.opt_local.relativenumber = false
-    vim.opt_local.number = false
-    vim.opt_local.conceallevel = 0
-  end,
-})
 
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
