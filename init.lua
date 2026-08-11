@@ -119,7 +119,20 @@ vim.pack.add {
 
 if os.getenv 'NVIM_FLUTTER' then
   vim.pack.add { 'https://github.com/akinsho/flutter-tools.nvim' }
-  require('flutter-tools').setup {}
+  -- vim.pack.del { 'flutter-tools.nvim' }
+  local home = vim.env.HOME .. '/'
+  require('flutter-tools').setup {
+    debugger = {
+      enabled = true,
+    },
+    default_run_args = { flutter = '--flavor development' },
+    lsp = {
+      settings = {
+        analysisExcludedFolders = { home .. 'flutter/packages', home .. '.pub-cache' },
+        autoImportCompletions = true,
+      },
+    },
+  }
 end
 
 local function its_linux()
@@ -162,6 +175,7 @@ require('nvim-treesitter').install {
   'html',
   'typescript',
   'java',
+  'dart',
   'kotlin',
 }
 
@@ -254,7 +268,7 @@ vim.lsp.config('vtsls', {
   filetypes = { 'javascript', 'typescript', 'svelte' },
 })
 
-vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
+vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls', 'dcm' }
 
 -- Keymaps --
 local function k(mode, key, func, opts)
