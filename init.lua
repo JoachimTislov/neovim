@@ -120,7 +120,7 @@ vim.pack.add {
 -- nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
 
 if os.getenv 'NVIM_FLUTTER' then
-  vim.pack.add { 'https://github.com/akinsho/flutter-tools.nvim' }
+  vim.pack.add { 'https://github.com/nvim-flutter/flutter-tools.nvim' }
   -- vim.pack.del { 'flutter-tools.nvim' }
   local home = vim.env.HOME .. '/'
   require('flutter-tools').setup {
