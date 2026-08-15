@@ -1,5 +1,6 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+vim.g.copilot_no_tab_map = true
 vim.g.have_nerd_font = true
 vim.o.wrap = true
 vim.o.winborder = 'rounded'
@@ -29,6 +30,8 @@ vim.o.chistory = 100
 vim.o.lhistory = 100
 vim.o.termguicolors = true
 
+-- Overview: https://github.com/rockerBOO/awesome-neovim
+
 -- TODOs --
 -- Doom emacs? https://github.com/doomemacs/doomemacs
 -- Use vim.ui.select?
@@ -47,7 +50,6 @@ vim.o.termguicolors = true
 -- Look into https://github.com/Lanjelin/nvim-docker/blob/main/Dockerfile
 
 -- plugins to consider:
--- https://github.com/nvim-pack/nvim-spectre
 -- https://github.com/doom-neovim/doom-nvim
 -- db integration:
 -- - https://github.com/zongben/dbout.nvim
@@ -82,6 +84,7 @@ vim.pack.add {
   'https://github.com/NeogitOrg/neogit', -- Git interface
   'https://github.com/sindrets/diffview.nvim', -- Git diff viewer
   'https://github.com/L3MON4D3/LuaSnip', -- Snippet engine
+  'https://github.com/nvim-pack/nvim-spectre', -- Search (ripgrep) and replace (sed)
   -- 'https://github.com/ravitemer/mcphub.nvim', -- servers implementing model context protocol. TODO: remove?
 
   -- Fuzzy completion source
@@ -104,37 +107,20 @@ vim.pack.add {
   'https://github.com/mfussenegger/nvim-dap', -- Debug Adapter Protocol client
   'https://github.com/igorlfs/nvim-dap-view', -- Minimal DAP UI
   'https://github.com/leoluz/nvim-dap-go', -- Go adapter
-  'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
-
   'https://github.com/nvim-neotest/nvim-nio', -- Async IO
-  'https://github.com/marilari88/neotest-vitest', -- Neotest adapter for Vitest
   'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
-
-  -- not important but can be nice to have
-  -- 'https://github.com/meznaric/key-analyzer.nvim', -- Analyze your keymaps
-  -- 'https://github.com/NMAC427/guess-indent.nvim', -- Guess indentation settings
+  'https://github.com/marilari88/neotest-vitest', -- Neotest adapter for Vitest
 }
 
--- require('guess-indent').setup {}
--- require('key-analyzer').setup()
--- nmap('<leader>ok', ':KeyAnalyzer ', { desc = '[O]pen KeyAnalyzer' })
+local keymap = require 'helpers.keymap'
+
+-- require 'plugins.nice-to-have'
+require('spectre').setup()
+require 'plugins.octo'
+require 'plugins.copilot'
 
 if os.getenv 'NVIM_FLUTTER' then
-  vim.pack.add { 'https://github.com/nvim-flutter/flutter-tools.nvim' }
-  -- vim.pack.del { 'flutter-tools.nvim' }
-  local home = vim.env.HOME .. '/'
-  require('flutter-tools').setup {
-    debugger = {
-      enabled = true,
-    },
-    default_run_args = { flutter = '--flavor development' },
-    lsp = {
-      settings = {
-        analysisExcludedFolders = { home .. 'flutter/packages', home .. '.pub-cache' },
-        autoImportCompletions = true,
-      },
-    },
-  }
+  require 'plugins.flutter'
 end
 
 local function its_linux()
@@ -200,7 +186,7 @@ require('rose-pine').setup {
   },
 }
 require('render-markdown').setup {
-  file_types = { 'copilot-chat', 'markdown' },
+  file_types = { 'markdown' },
   render_modes = true, -- n, c, t,
   completions = {
     lsp = { enabled = true },
@@ -270,42 +256,13 @@ vim.lsp.config('vtsls', {
   filetypes = { 'javascript', 'typescript', 'svelte' },
 })
 
-vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls', 'dcm' }
-
--- Keymaps --
-local function k(mode, key, func, opts)
-  vim.keymap.set(mode, key, func, opts or {})
-end
-
-local function nvmap(...)
-  k({ 'n', 'v', 'x' }, ...)
-end
-
-local function ismap(...)
-  k({ 'i', 's' }, ...)
-end
-
-local function nmap(...)
-  k('n', ...)
-end
-
-local function vmap(...)
-  k('v', ...)
-end
-
-local function imap(...)
-  k('i', ...)
-end
-
-local function tmap(...)
-  k('t', ...)
-end
+vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
 
 local function autocmd(event, opts)
   vim.api.nvim_create_autocmd(event, opts)
 end
 
-tmap('<C-BS>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+keymap.t('<C-BS>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TODO: Implement simple management of available known plugins
 -- vim.pack bindings
@@ -317,7 +274,7 @@ tmap('<C-BS>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 --   end
 -- end
 
-nmap('<leader>nU', function()
+keymap.n('<leader>nU', function()
   vim.pack.update()
 end, { desc = '[N]eovim [U]pdate plugins' })
 
@@ -339,14 +296,14 @@ local function testRunAttach(location)
   vim.cmd 'normal! G'
 end
 
-nmap('<leader>tr', testRunAttach, { desc = '[T]est [R]un nearest' })
-nmap('<leader>tf', function()
+keymap.n('<leader>tr', testRunAttach, { desc = '[T]est [R]un nearest' })
+keymap.n('<leader>tf', function()
   testRunAttach(vim.fn.expand '%')
 end, { desc = '[T]est run [F]ile' })
-nmap('<leader>ts', function()
+keymap.n('<leader>ts', function()
   neotest_run.stop()
 end, { desc = '[T]est [S]top' })
-nmap('<leader>td', function()
+keymap.n('<leader>td', function()
   neotest_run.run { strategy = 'dap' }
 end, { desc = '[T]est [D]ebug nearest' })
 
@@ -365,7 +322,7 @@ pick.setup {
 }
 
 --- [P]ick [P]roject ---
-nmap('<leader>pp', function()
+keymap.n('<leader>pp', function()
   local projects = {}
   local projects_path = vim.fn.expand '~/projects'
   if vim.fn.isdirectory(projects_path) == 1 then
@@ -391,7 +348,7 @@ nmap('<leader>pp', function()
 end, { desc = '[P]ick [P]roject' })
 
 --- [P]ick [D]iagnostics ---
-nmap('<leader>pd', function()
+keymap.n('<leader>pd', function()
   local diagnostics = vim.diagnostic.get()
   if #diagnostics == 0 then
     vim.notify('No diagnostics found', vim.log.levels.INFO)
@@ -424,7 +381,7 @@ nmap('<leader>pd', function()
   }
 end, { desc = '[P]ick [D]iagnostics' })
 
-nmap('<leader>pt', function()
+keymap.n('<leader>pt', function()
   -- TODO: Prevent reading too many files... maybe restrict usage to certain directories
   -- probably best to read path and ensure either parent dir or child dir is named something like 'src', 'project', 'workspace', etc. to prevent accidentally reading entire home directory
 
@@ -555,17 +512,17 @@ require('which-key').setup {
 
 local ls = require 'luasnip'
 
-imap('<C-k>', function()
+keymap.i('<C-k>', function()
   if ls.expand_or_jumpable() then
     ls.expand_or_jump()
   end
 end, { silent = true })
-ismap('<C-j>', function()
+keymap.is('<C-j>', function()
   if ls.jumpable(-1) then
     ls.jump(-1)
   end
 end, { silent = true })
-imap('<C-l>', function()
+keymap.i('<C-l>', function()
   if ls.choice_active() then
     ls.change_choice(1)
   end
@@ -610,64 +567,64 @@ require('gitsigns').setup {
 
     -- Actions
     -- visual mode
-    vmap('<leader>gs', function()
+    keymap.v('<leader>gs', function()
       gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
     end, { desc = 'git [s]tage hunk' })
-    vmap('<leader>gr', function()
+    keymap.v('<leader>gr', function()
       gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
     end, { desc = 'git [r]eset hunk' })
     -- normal mode
-    nmap('<leader>gs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
-    nmap('<leader>gr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
-    nmap('<leader>gS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
-    nmap('<leader>gu', gitsigns.stage_hunk, { desc = 'git [u]ndo stage hunk' })
-    nmap('<leader>gR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
-    nmap('<leader>gp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
-    nmap('<leader>gb', gitsigns.blame_line, { desc = 'git [b]lame line' })
-    nmap('<leader>gd', gitsigns.diffthis, { desc = 'git [d]iff against index' })
-    nmap('<leader>gD', function()
+    keymap.n('<leader>gs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
+    keymap.n('<leader>gr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
+    keymap.n('<leader>gS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
+    keymap.n('<leader>gu', gitsigns.stage_hunk, { desc = 'git [u]ndo stage hunk' })
+    keymap.n('<leader>gR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
+    keymap.n('<leader>gp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
+    keymap.n('<leader>gb', gitsigns.blame_line, { desc = 'git [b]lame line' })
+    keymap.n('<leader>gd', gitsigns.diffthis, { desc = 'git [d]iff against index' })
+    keymap.n('<leader>gD', function()
       --- @diagnostic disable-next-line: param-type-mismatch
       gitsigns.diffthis '@'
     end, { desc = 'git [D]iff against last commit' })
     -- Toggles
-    nmap('<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
-    nmap('<leader>tD', gitsigns.preview_hunk_inline, { desc = '[T]oggle git show [D]eleted' })
+    keymap.n('<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
+    keymap.n('<leader>tD', gitsigns.preview_hunk_inline, { desc = '[T]oggle git show [D]eleted' })
   end,
 }
 
 -- [Q]uit
-nmap('<leader>qa', '<cmd>qa<cr>', { desc = '[Q]uit [A]ll' })
-nmap('<leader>qt', '<cmd>tabc<cr>', { desc = '[Q]uit [T]ab' })
-nmap('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
-nmap('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
+keymap.n('<leader>qa', '<cmd>qa<cr>', { desc = '[Q]uit [A]ll' })
+keymap.n('<leader>qt', '<cmd>tabc<cr>', { desc = '[Q]uit [T]ab' })
+keymap.n('<leader>qb', '<cmd>bd<cr>', { desc = '[Q]uit [B]uffer' })
+keymap.n('<leader>qf', '<cmd>q!<cr>', { desc = '[Q]uit [F]orce' })
 
 -- Diff against all changes since previous commit
 local dv = require 'diffview'
-nmap('<leader>DC', function()
+keymap.n('<leader>DC', function()
   dv.open { 'HEAD~1' }
 end, { desc = '[D]iff against previous [C]ommit' })
 
 -- Show all uncommitted changes
-nmap('<leader>Dc', function()
+keymap.n('<leader>Dc', function()
   dv.open { 'HEAD', '--cache' }
 end, { desc = '[D]iff against uncommitted [c]hanges' })
 
 -- Close diffview
-nmap('<leader>De', '<cmd>DiffviewClose<cr>', { desc = '[D]iff against uncommitted [c]hanges' })
+keymap.n('<leader>De', '<cmd>DiffviewClose<cr>', { desc = '[D]iff against uncommitted [c]hanges' })
 
 -- [O]pen
-nmap('<leader>ot', '<cmd>terminal<cr>', { desc = '[O]pen [T]erminal' })
-nmap('<leader>oT', '<cmd>InspectTree<cr>', { desc = '[O]pen [T]erminal' })
--- nmap('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
-nmap('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
-nmap('<leader>oM', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
-nmap('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
-nmap('<leader>os', '<cmd>split<cr>', { desc = '[O]pen [S]plit' })
-nmap('<leader>ov', '<cmd>vsplit<cr>', { desc = '[O]pen [V]ertical split' })
-nmap('<leader>oc', '<cmd>e $MYVIMRC<cr>', { desc = '[O]pen [C]onfig' })
-nmap('<leader>om', '<cmd>messages<cr>', { desc = '[O]pen [M]essages' })
-nmap('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uickfix list' })
-nvmap('<leader>oh', function()
+keymap.n('<leader>ot', '<cmd>terminal<cr>', { desc = '[O]pen [T]erminal' })
+keymap.n('<leader>oT', '<cmd>InspectTree<cr>', { desc = '[O]pen [T]erminal' })
+-- map.n('<leader>oH', '<cmd>MCPHub<cr>', { desc = '[O]pen MCP [H]ub' })
+keymap.n('<leader>od', '<cmd>DiffviewOpen<cr>', { desc = '[O]pen [D]iffview' })
+keymap.n('<leader>oM', '<cmd>Mason<cr>', { desc = '[O]pen [M]ason' })
+keymap.n('<leader>on', '<cmd>Neogit<cr>', { desc = '[O]pen [N]eogit' })
+keymap.n('<leader>os', '<cmd>split<cr>', { desc = '[O]pen [S]plit' })
+keymap.n('<leader>ov', '<cmd>vsplit<cr>', { desc = '[O]pen [V]ertical split' })
+keymap.n('<leader>oc', '<cmd>e $MYVIMRC<cr>', { desc = '[O]pen [C]onfig' })
+keymap.n('<leader>om', '<cmd>messages<cr>', { desc = '[O]pen [M]essages' })
+keymap.n('<leader>oq', '<cmd>copen<cr>', { desc = '[O]pen [Q]uickfix list' })
+keymap.nv('<leader>oh', function()
   local word = vim.fn.expand '<cword>'
   print('checking help for ' .. word)
   ---@diagnostic disable-next-line: param-type-mismatch ---supports string, but type is set to table
@@ -678,11 +635,11 @@ nvmap('<leader>oh', function()
 end, { desc = '[O]pen [H]elp for selected/current word' })
 
 -- Mini [P]ick
-nmap('<leader>pf', pick.builtin.files, { desc = '[P]ick [F]iles' })
-nmap('<leader>ph', pick.builtin.help, { desc = '[P]ick [H]elp' })
-nmap('<leader>pb', pick.builtin.buffers, { desc = '[P]ick [B]uffers' })
-nmap('<leader>pg', pick.builtin.grep_live, { desc = '[P]ick [G]rep' })
-nmap('<leader>pc', function()
+keymap.n('<leader>pf', pick.builtin.files, { desc = '[P]ick [F]iles' })
+keymap.n('<leader>ph', pick.builtin.help, { desc = '[P]ick [H]elp' })
+keymap.n('<leader>pb', pick.builtin.buffers, { desc = '[P]ick [B]uffers' })
+keymap.n('<leader>pg', pick.builtin.grep_live, { desc = '[P]ick [G]rep' })
+keymap.n('<leader>pc', function()
   local cmd = vim.fn.input 'Command to run > '
   if cmd == '' then
     vim.notify('No command provided', vim.log.levels.WARN)
@@ -692,38 +649,38 @@ nmap('<leader>pc', function()
 end, { desc = '[P]ick [C]ommand' })
 
 -- Actions
-vmap('<BS>', 'y/<c-r>"<cr>', { desc = 'Search with selected text' })
--- vmap('<CR>', 'y:<c-r>"<cr>')
-nmap('<BS>', '/', { desc = 'Search' })
--- nmap('<Enter>', ':', { desc = 'Search' }) INFO: crashes with Quickfix list
-nmap('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
-nmap('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
-nmap('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
-nmap('<leader>s', ':source<cr>')
+keymap.v('<BS>', 'y/<c-r>"<cr>', { desc = 'Search with selected text' })
+-- keymap.v('<CR>', 'y:<c-r>"<cr>')
+keymap.n('<BS>', '/', { desc = 'Search' })
+-- map.n('<Enter>', ':', { desc = 'Search' }) INFO: crashes with Quickfix list
+keymap.n('<s-h>', '<cmd>Oil<cr>', { desc = 'Oil (File browser)' })
+keymap.n('<leader>e', '<cmd>q<cr>', { desc = '[E]xit' })
+keymap.n('<leader>w', '<cmd>w<cr>', { desc = 'Write to file' })
+keymap.n('<leader>s', ':source<cr>')
 
 -- Clear highlights on search when pressing <Esc> in normal mode
-nmap('<Esc>', '<cmd>nohlsearch<cr>')
+keymap.n('<Esc>', '<cmd>nohlsearch<cr>')
 
 -- Navigate between windows
-nvmap('<C-j>', '<C-W>j')
-nvmap('<C-k>', '<C-W>k')
-nvmap('<C-l>', '<C-W>l')
-nvmap('<C-h>', '<C-W>h')
+keymap.nv('<C-j>', '<C-W>j')
+keymap.nv('<C-k>', '<C-W>k')
+keymap.nv('<C-l>', '<C-W>l')
+keymap.nv('<C-h>', '<C-W>h')
 
 -- Center editor view with zz
-nvmap('<C-d>', '<C-d>zz')
-nvmap('<C-u>', '<C-u>zz')
-nvmap('<C-f>', '<C-f>zz')
-nvmap('<C-b>', '<C-b>zz')
+keymap.nv('<C-d>', '<C-d>zz')
+keymap.nv('<C-u>', '<C-u>zz')
+keymap.nv('<C-f>', '<C-f>zz')
+keymap.nv('<C-b>', '<C-b>zz')
 
 -- Quickfix list navigation
 -- Only works for systems respecting alt key
 -- Alt is encoded to Esc on Windows, use ]/[ and q/Q instead to maneuver the qf list
 if its_linux() then
-  nvmap('<M-j>', '<cmd>cnext<cr>')
-  nvmap('<M-k>', '<cmd>cprev<cr>')
-  nvmap('<M-h>', '<cmd>cfirst<cr>')
-  nvmap('<M-l>', '<cmd>clast<cr>')
+  keymap.nv('<M-j>', '<cmd>cnext<cr>')
+  keymap.nv('<M-k>', '<cmd>cprev<cr>')
+  keymap.nv('<M-h>', '<cmd>cfirst<cr>')
+  keymap.nv('<M-l>', '<cmd>clast<cr>')
 end
 
 --------------------------
@@ -770,27 +727,27 @@ dapgo.setup {
 }
 -- https://igorlfs.github.io/nvim-dap-view/home
 local dapview = require 'dap-view'
-nmap('<leader>dv', dapview.toggle, { desc = 'Debug: Open [v]iew' })
+keymap.n('<leader>dv', dapview.toggle, { desc = 'Debug: Open [v]iew' })
 -- restart and run_last are basically the same, but run_last is more usable
-nmap('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
--- nmap('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
-nmap('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
-nmap('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
-nmap('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
-nmap('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
-nmap('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
-nmap('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
-nmap('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
-nmap('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
-nmap('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
-nmap('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
-nmap('<leader>dB', function()
+keymap.n('<leader>dr', dap.run_last, { desc = 'Debug: Run last' })
+-- map.n('<leader>dr', dap.restart, { desc = 'Debug: Restart'})
+keymap.n('<leader>dc', dap.continue, { desc = 'Debug: Continue' })
+keymap.n('<leader>dd', dap.disconnect, { desc = 'Debug: Disconnect' })
+keymap.n('<leader>dx', dap.terminate, { desc = 'Debug: Terminate' })
+keymap.n('<leader>dp', dap.pause, { desc = 'Debug: Pause' })
+keymap.n('<leader>di', dap.step_into, { desc = 'Debug: Step into' })
+keymap.n('<leader>do', dap.step_over, { desc = 'Debug: Step over' })
+keymap.n('<leader>de', dap.step_out, { desc = 'Debug: Step out' })
+keymap.n('<leader>du', dap.step_back, { desc = 'Debug: Step back' })
+keymap.n('<leader>db', dap.toggle_breakpoint, { desc = 'Debug: Toggle breakpoint' })
+keymap.n('<leader>dR', dap.clear_breakpoints, { desc = 'Debug: Clear breakpoints' })
+keymap.n('<leader>dB', function()
   dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
 end, { desc = 'Debug: Set Breakpoint' })
 -- TODO: enable these once I start using Go tests. 'dt' conflicts with restart
 -- Need better keybind
--- nmap('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
--- nmap('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
+-- map.n('<leader>dt', require('dap-go').debug_test, { desc = 'Debug: test'})
+-- map.n('<leader>dl', require('dap-go').dapgo.debug_last_test, { desc = 'Debug: Last test' })
 
 dap.configurations.lua = {
   {
@@ -830,7 +787,7 @@ require('dap-go').setup {
 --------------------------------------
 
 -- insert with indentation on empty lines
-nmap('i', function()
+keymap.n('i', function()
   return string.match(vim.api.nvim_get_current_line(), '%g') == nil and 'cc' or 'i'
 end, { expr = true, noremap = true })
 
@@ -851,15 +808,15 @@ if vim.fn.executable(clip) == 1 then
 end
 
 if vim.fn.has 'win32' == 1 then
-  nmap('<leader>oc', '<cmd>e $DOTFILES<cr>', { desc = '[O]pen [C]onfig' })
+  keymap.n('<leader>oc', '<cmd>e $DOTFILES<cr>', { desc = '[O]pen [C]onfig' })
 end
 
 if its_linux() then
   -- If tmux is running, use the following mappings to navigate between tmux panes and nvim splits seamlessly
-  nvmap('<C-h>', '<cmd>TmuxNavigateLeft<cr>')
-  nvmap('<C-l>', '<cmd>TmuxNavigateRight<cr>')
-  nvmap('<C-j>', '<cmd>TmuxNavigateDown<cr>')
-  nvmap('<C-k>', '<cmd>TmuxNavigateUp<cr>')
+  keymap.nv('<C-h>', '<cmd>TmuxNavigateLeft<cr>')
+  keymap.nv('<C-l>', '<cmd>TmuxNavigateRight<cr>')
+  keymap.nv('<C-j>', '<cmd>TmuxNavigateDown<cr>')
+  keymap.nv('<C-k>', '<cmd>TmuxNavigateUp<cr>')
 end
 
 vim.diagnostic.config {
@@ -891,15 +848,15 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 local snoremap = { noremap = true, silent = true }
 
 -- Disable space
-nvmap('<Space>', '<Nop>', snoremap)
+keymap.nv('<Space>', '<Nop>', snoremap)
 
 -- Disable deprecate messages
 ---@diagnostic disable-next-line: duplicate-set-field
 vim.deprecate = function() end
 
 -- Omit chars consumed by the x and c operator
-nvmap('x', '"_x', snoremap)
-nvmap('c', '"_c', snoremap)
+keymap.nv('x', '"_x', snoremap)
+keymap.nv('c', '"_c', snoremap)
 
 -- ignore empty line when deleting or yanking a line
 -- Source: https://www.reddit.com/r/neovim/comments/1ftpdt9/comment/lpvh3s8/
@@ -916,10 +873,10 @@ local function handle_yank_delete(key)
   end
 end
 
-nmap('yy', function()
+keymap.n('yy', function()
   handle_yank_delete 'yy'
 end, snoremap)
-nmap('dd', function()
+keymap.n('dd', function()
   handle_yank_delete 'dd'
 end, snoremap)
 
