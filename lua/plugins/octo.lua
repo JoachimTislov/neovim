@@ -7,7 +7,7 @@ vim.pack.add {
 }
 
 require('octo').setup {
-  enable_builtin = false,
+  enable_builtin = true,
 }
 
 local keymap = require 'helpers.keymap'
