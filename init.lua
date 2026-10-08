@@ -77,6 +77,7 @@ vim.pack.add {
   'https://github.com/stevearc/conform.nvim', -- Code formatter
   'https://github.com/nvim-mini/mini.pick', -- Fuzzy picker
   'https://github.com/nvim-mini/mini.surround', -- Surround
+  'https://github.com/nvim-mini/mini.move',
   'https://github.com/neovim/nvim-lspconfig', -- LSP configurations
   'https://github.com/williamboman/mason.nvim', -- Installer UI
   'https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim', -- Auto install packages
@@ -111,7 +112,6 @@ vim.pack.add {
   'https://github.com/nvim-neotest/neotest', -- Testing framework adapter TODO
   'https://github.com/marilari88/neotest-vitest', -- Neotest adapter for Vitest
 }
-
 local keymap = require 'helpers.keymap'
 
 -- require 'plugins.nice-to-have'
@@ -446,6 +446,29 @@ require('oil').setup {
     end,
   },
 }
+
+require('mini.move').setup {
+  mappings = {
+    -- Move visual selection in Visual mode. Defaults are Alt (Meta) + hjkl.
+    left = '<C-M-h>',
+    right = '<C-M-l>',
+    down = '<C-M-j>',
+    up = '<C-M-k>',
+
+    -- Move current line in Normal mode
+    line_left = '<C-M-h>',
+    line_right = '<C-M-l>',
+    line_down = '<C-M-j>',
+    line_up = '<C-M-k>',
+  },
+
+  -- Options which control moving behavior
+  options = {
+    -- Automatically reindent selection during linewise vertical move
+    reindent_linewise = true,
+  },
+}
+
 require('conform').setup {
   format_on_save = {
     timeout_ms = 1000,
@@ -674,7 +697,7 @@ keymap.nv('<C-f>', '<C-f>zz')
 keymap.nv('<C-b>', '<C-b>zz')
 
 -- Quickfix list navigation
--- Only works for systems respecting alt key
+-- Only works for systems respecting alt (meta) key
 -- Alt is encoded to Esc on Windows, use ]/[ and q/Q instead to maneuver the qf list
 if its_linux() then
   keymap.nv('<M-j>', '<cmd>cnext<cr>')
