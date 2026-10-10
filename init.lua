@@ -118,6 +118,7 @@ local keymap = require 'helpers.keymap'
 require('spectre').setup()
 require 'plugins.octo'
 require 'plugins.copilot'
+require 'plugins.typst'
 
 if os.getenv 'NVIM_FLUTTER' then
   require 'plugins.flutter'
@@ -211,6 +212,8 @@ require('mason-tool-installer').setup {
     'prettierd',
     'prettier',
     'google-java-format',
+    'clangd',
+    'pyright',
   },
 }
 
@@ -256,7 +259,7 @@ vim.lsp.config('vtsls', {
   filetypes = { 'javascript', 'typescript', 'svelte' },
 })
 
-vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls' }
+vim.lsp.enable { 'lua_ls', 'vtsls', 'svelte', 'eslint', 'jsonls', 'cssls', 'gopls', 'clangd', 'pyright' }
 
 local function autocmd(event, opts)
   vim.api.nvim_create_autocmd(event, opts)
@@ -485,6 +488,7 @@ require('conform').setup {
     java = { 'google-java-format' },
     zsh = { 'shfmt' },
     kt = { 'ktfmt' },
+    c = { 'clang-format' },
   },
 }
 local neogit = require 'neogit'
